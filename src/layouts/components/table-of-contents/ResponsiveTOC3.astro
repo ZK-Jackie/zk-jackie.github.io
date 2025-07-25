@@ -1,0 +1,305 @@
+---
+// src/layouts/components/table-of-contents/ResponsiveTOC3.astro
+import type { MarkdownHeading } from "astro";
+import type { Heading } from "./TOCHeading.astro";
+
+interface Props {
+    headings: MarkdownHeading[];
+}
+
+function buildToc(headings: MarkdownHeading[]) {
+    const toc: Heading[] = [];
+    const parentHeadings = new Map();
+    headings
+      .filter((h) => h.depth <= 3)
+      .forEach((h) => {
+          const heading = { ...h, subheadings: [] };
+          parentHeadings.set(heading.depth, heading);
+          if (heading.depth === 2) {
+              toc.push(heading);
+          } else {
+              parentHeadings.get(heading.depth - 1)?.subheadings.push(heading);
+          }
+      });
+    return toc;
+}
+
+const { headings } = Astro.props;
+const tableOfContents = buildToc(headings);
+---
+
+<!-- 移动端顶部下拉目录 - 调整位置避免被header遮挡 -->
+<div class="lg:hidden fixed top-27 left-0 right-0 z-40 bg-white/95 dark:bg-gray-900/95 backdrop-blur-sm shadow-sm border-b border-gray-200/50 dark:border-gray-700/50 transform -translate-y-full transition-transform duration-300" id="mobile-toc">
+    <div class="px-4 py-3">
+        <button id="mobile-toc-toggle" class="flex items-center justify-between w-full text-left">
+            <div class="flex items-center min-w-0 flex-1">
+                <h3 class="text-sm font-medium text-gray-600 dark:text-gray-400 mr-2 flex-shrink-0">目录:</h3>
+                <span id="current-heading" class="text-sm text-gray-800 dark:text-gray-200 truncate">
+                    {tableOfContents[0]?.text || '开始阅读'}
+                </span>
+            </div>
+            <svg class="w-4 h-4 transform transition-transform duration-200 flex-shrink-0 ml-2" fill="currentColor" viewBox="0 0 20 20">
+                <path fill-rule="evenodd" d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z" clip-rule="evenodd" />
+            </svg>
+        </button>
+        <!-- 修复内容展开位置 -->
+        <div id="mobile-toc-content" class="overflow-hidden transition-all duration-300 ease-in-out" style="max-height: 0;">
+            <div class="top-50 pt-3 pb-1">
+                <ul class="space-y-1 max-h-64 overflow-y-auto">
+                    {tableOfContents.map((heading) => (
+                      <li>
+                          <a href={`#${heading.slug}`} class="mobile-toc-link block py-2 px-3 text-gray-600 dark:text-gray-400 hover:text-blue-600 dark:hover:text-blue-400 hover:bg-gray-50 dark:hover:bg-gray-700 rounded transition-colors" data-target={heading.slug}>
+                              {heading.text}
+                          </a>
+                          {heading.subheadings.length > 0 && (
+                            <ul class="ml-4 space-y-1">
+                                {heading.subheadings.map((subheading) => (
+                                  <li>
+                                      <a href={`#${subheading.slug}`} class="mobile-toc-link block py-1 px-3 text-sm text-gray-500 dark:text-gray-500 hover:text-blue-600 dark:hover:text-blue-400 hover:bg-gray-50 dark:hover:bg-gray-700 rounded transition-colors" data-target={subheading.slug}>
+                                          {subheading.text}
+                                      </a>
+                                  </li>
+                                ))}
+                            </ul>
+                          )}
+                      </li>
+                    ))}
+                </ul>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- 桌面端左侧固定目录 - 紧贴header下方 -->
+<div class="hidden lg:block fixed top-16 left-0 w-80 h-[calc(100vh-4rem)] z-30 bg-white/95 dark:bg-gray-900/95 backdrop-blur-sm" id="desktop-toc">
+    <!-- 渐变分隔线 -->
+    <div class="absolute right-0 top-0 w-px h-full bg-gradient-to-b from-gray-300 via-gray-200 to-transparent dark:from-gray-600 dark:via-gray-700 dark:to-transparent"></div>
+
+    <div class="p-6 h-full overflow-y-auto">
+        <h3 class="text-lg font-semibold text-gray-800 dark:text-gray-200 mb-4 sticky top-0 bg-white/95 dark:bg-gray-900/95 pb-2">目录</h3>
+        <ul class="space-y-1">
+            {tableOfContents.map((heading) => (
+              <li>
+                  <a href={`#${heading.slug}`} class="desktop-toc-link block py-2 px-3 text-gray-600 dark:text-gray-400 hover:text-blue-600 dark:hover:text-blue-400 hover:bg-gray-50/50 dark:hover:bg-gray-800/50 rounded transition-all duration-200 border-l-2 border-transparent text-sm" data-target={heading.slug}>
+                      {heading.text}
+                  </a>
+                  {heading.subheadings.length > 0 && (
+                    <ul class="ml-4 space-y-1">
+                        {heading.subheadings.map((subheading) => (
+                          <li>
+                              <a href={`#${subheading.slug}`} class="desktop-toc-link block py-1 px-3 text-xs text-gray-500 dark:text-gray-500 hover:text-blue-600 dark:hover:text-blue-400 hover:bg-gray-50/50 dark:hover:bg-gray-800/50 rounded transition-all duration-200 border-l-2 border-transparent" data-target={subheading.slug}>
+                                  {subheading.text}
+                              </a>
+                          </li>
+                        ))}
+                    </ul>
+                  )}
+              </li>
+            ))}
+        </ul>
+    </div>
+</div>
+
+<script>
+    document.addEventListener('DOMContentLoaded', () => {
+        const mobileToggle = document.getElementById('mobile-toc-toggle');
+        const mobileContent = document.getElementById('mobile-toc-content');
+        const mobileToc = document.getElementById('mobile-toc');
+        const currentHeadingSpan = document.getElementById('current-heading');
+        const desktopToc = document.getElementById('desktop-toc');
+
+        // 移动端下拉切换 - 使用smooth height animation
+        if (mobileToggle && mobileContent) {
+            mobileToggle.addEventListener('click', () => {
+                const svg = mobileToggle.querySelector('svg');
+                const isExpanded = mobileContent.style.maxHeight !== '0px' && mobileContent.style.maxHeight !== '';
+
+                if (isExpanded) {
+                    // 收起
+                    mobileContent.style.maxHeight = '0px';
+                    svg?.classList.remove('rotate-180');
+                } else {
+                    // 展开 - 先计算内容高度
+                    mobileContent.style.maxHeight = 'none';
+                    const height = mobileContent.scrollHeight;
+                    mobileContent.style.maxHeight = '0px';
+
+                    // 强制重绘后设置目标高度
+                    requestAnimationFrame(() => {
+                        mobileContent.style.maxHeight = Math.min(height, 300) + 'px';
+                    });
+                    svg?.classList.add('rotate-180');
+                }
+            });
+        }
+
+        // 检测是否到达正文区域 - 移动端显示/隐藏逻辑
+        const articleElement = document.querySelector('article .prose');
+        let isContentVisible = false;
+
+        if (articleElement && mobileToc) {
+            const contentObserver = new IntersectionObserver((entries) => {
+                entries.forEach(entry => {
+                    if (entry.isIntersecting && !isContentVisible) {
+                        // 到达正文，显示移动端目录
+                        mobileToc.classList.remove('-translate-y-full');
+                        mobileToc.classList.add('translate-y-0');
+                        isContentVisible = true;
+                    } else if (!entry.isIntersecting && entry.boundingClientRect.top > 0 && isContentVisible) {
+                        // 离开正文向上滚动，隐藏移动端目录
+                        mobileToc.classList.remove('translate-y-0');
+                        mobileToc.classList.add('-translate-y-full');
+                        isContentVisible = false;
+                        // 收起展开的内容
+                        if (mobileContent) {
+                            mobileContent.style.maxHeight = '0px';
+                            const svg = mobileToggle?.querySelector('svg');
+                            svg?.classList.remove('rotate-180');
+                        }
+                    }
+                });
+            }, {
+                rootMargin: '-100px 0px 0px 0px',
+                threshold: 0
+            });
+
+            contentObserver.observe(articleElement);
+        }
+
+        // 获取所有标题元素
+        const headings = document.querySelectorAll('h1, h2, h3, h4, h5, h6');
+        const tocLinks = document.querySelectorAll('.desktop-toc-link, .mobile-toc-link');
+
+        // 创建 IntersectionObserver 来检测当前可见的标题
+        const observer = new IntersectionObserver((entries) => {
+            let activeHeading: HTMLElement | null = null;
+            let maxIntersectionRatio = 0;
+
+            entries.forEach(entry => {
+                if (entry.isIntersecting && entry.intersectionRatio > maxIntersectionRatio) {
+                    activeHeading = entry.target as HTMLElement;
+                    maxIntersectionRatio = entry.intersectionRatio;
+                }
+            });
+
+            if (activeHeading) {
+                // 移除所有活跃状态
+                tocLinks.forEach(link => {
+                    link.classList.remove('text-blue-600', 'dark:text-blue-400', 'bg-blue-50/50', 'dark:bg-blue-900/30', 'border-blue-500', 'dark:border-blue-400');
+                    link.classList.add('border-transparent');
+                });
+
+                // 添加当前活跃标题的高亮
+                const targetId = activeHeading.id;
+                const activeLinks = document.querySelectorAll(`[data-target="${targetId}"]`);
+
+                activeLinks.forEach(link => {
+                    link.classList.remove('border-transparent');
+                    link.classList.add('text-blue-600', 'dark:text-blue-400', 'bg-blue-50/50', 'dark:bg-blue-900/30', 'border-blue-500', 'dark:border-blue-400');
+                });
+
+                // 更新移动端当前标题显示
+                if (currentHeadingSpan && activeHeading.textContent) {
+                    currentHeadingSpan.textContent = activeHeading.textContent.trim();
+                }
+            }
+        }, {
+            rootMargin: '-10% 0px -80% 0px',
+            threshold: [0, 0.5, 1]
+        });
+
+        // 观察所有标题元素
+        headings.forEach(heading => {
+            observer.observe(heading);
+        });
+
+        // 平滑滚动到目标位置
+        tocLinks.forEach(link => {
+            link.addEventListener('click', (e) => {
+                e.preventDefault();
+                const targetId = link.getAttribute('data-target');
+                const targetElement = targetId ? document.getElementById(targetId) : null;
+
+                if (targetElement) {
+                    // 计算偏移量（考虑固定头部和移动端目录）
+                    const offset = window.innerWidth < 1024 ? 160 : 80;
+                    const elementPosition = targetElement.offsetTop - offset;
+
+                    window.scrollTo({
+                        top: elementPosition,
+                        behavior: 'smooth'
+                    });
+
+                    // 移动端点击后收起下拉框
+                    if (window.innerWidth < 1024 && mobileContent) {
+                        mobileContent.style.maxHeight = '0px';
+                        const svg = mobileToggle?.querySelector('svg');
+                        svg?.classList.remove('rotate-180');
+                    }
+                }
+            });
+        });
+
+        // 桌面端：调整正文内容的左边距，为目录腾出空间
+        if (window.innerWidth >= 1024 && desktopToc) {
+            const mainContent = document.querySelector('main > div') as HTMLElement;
+            if (mainContent) {
+                mainContent.style.marginLeft = '20rem';
+            }
+        }
+
+        // 响应式处理
+        window.addEventListener('resize', () => {
+            const mainContent = document.querySelector('main > div') as HTMLElement;
+            if (mainContent) {
+                if (window.innerWidth >= 1024) {
+                    mainContent.style.marginLeft = '20rem';
+                } else {
+                    mainContent.style.marginLeft = '';
+                }
+            }
+        });
+    });
+</script>
+
+<style>
+/* 自定义滚动条样式 */
+#desktop-toc {
+  scrollbar-width: thin;
+  scrollbar-color: rgba(156, 163, 175, 0.3) transparent;
+  }
+
+#desktop-toc::-webkit-scrollbar {
+  width: 4px;
+  }
+
+#desktop-toc::-webkit-scrollbar-track {
+  background: transparent;
+  }
+
+#desktop-toc::-webkit-scrollbar-thumb {
+  background-color: rgba(156, 163, 175, 0.3);
+  border-radius: 2px;
+  }
+
+.dark #desktop-toc::-webkit-scrollbar-thumb {
+  background-color: rgba(209, 213, 219, 0.3);
+  }
+
+/* 移动端目录初始状态 */
+#mobile-toc {
+  transform: translateY(-100%);
+  }
+
+/* 桌面端目录悬停效果 */
+.desktop-toc-link:hover {
+  transform: translateX(2px);
+  }
+
+/* 确保正文内容不被目录遮挡 */
+@media (min-width: 1024px) {
+  .toc-adjusted-content {
+  margin-left: 20rem;
+  }
+  }
+</style>
