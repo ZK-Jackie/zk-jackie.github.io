@@ -169,7 +169,7 @@ const {
     
     <!-- SEO Component -->
     <SEO
-      title={`${title} - ${withSiteName ? siteConfig.title : ''}`}
+      title={`${title}${withSiteName ? ` - ${siteConfig.title}` : ''}`}
       description={description}
       image={image}
       article={article}
