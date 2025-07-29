@@ -11,6 +11,16 @@
   </div>
 </div>
 
+<style>
+    .tab-button {
+        transition: all 0.2s ease-in-out;
+    }
+
+    .tab-button.active {
+        font-weight: 600;
+    }
+</style>
+
 <script>
   function initTabs() {
     document.querySelectorAll('.tabs-container').forEach(container => {
@@ -25,6 +35,10 @@
       // Create tab buttons for each panel
       tabPanels.forEach((panel, index) => {
         const tabName = panel.getAttribute('data-name');
+        if (!tabName) {
+          console.warn('Tab panel is missing data-name attribute:', panel);
+          return;
+        }
         const tabId = `tab-${tabName.toLowerCase().replace(/\s+/g, '-')}-${Math.random().toString(36).substring(2, 9)}`;
         panel.id = `${tabId}-panel`;
         
@@ -75,12 +89,3 @@
   document.addEventListener('astro:after-swap', initTabs);
 </script>
 
-<style>
-  .tab-button {
-    transition: all 0.2s ease-in-out;
-  }
-  
-  .tab-button.active {
-    font-weight: 600;
-  }
-</style>

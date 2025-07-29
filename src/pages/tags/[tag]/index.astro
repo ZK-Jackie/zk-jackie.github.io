@@ -4,7 +4,7 @@ import Layout from '@layouts/Layout.astro';
 import PostCard from '@components/blog/PostCard.astro';
 import Pagination from '@components/common/Pagination.astro';
 import { getPagination } from '@utils/pagination';
-import { siteConfig } from '@config/site';
+import { seoConfig } from '@config';
 
 export async function getStaticPaths() {
   const posts = await getCollection('posts', ({ data }) => {
@@ -47,15 +47,15 @@ const { postsPerPage } = getPagination({
 const paginatedPosts = posts.slice(0, postsPerPage);
 
 // Set noindex based on site config
-const noindex = siteConfig.noindex.tags;
+const noindex = seoConfig.noindex.includes("/tags") || seoConfig.noindex.includes("*");
 
 // Format the tag name for display
 const formattedTag = tag.charAt(0).toUpperCase() + tag.slice(1);
 ---
 
 <Layout 
-  title={`Posts tagged with ${formattedTag} - ${siteConfig.title}`}
-  description={`Browse all posts tagged with ${formattedTag}`}
+  title={`标签：${formattedTag}`}
+  description={`浏览所有与 ${formattedTag} 相关的文章`}
   noindex={noindex}
 >
   <div class="w-full py-8">
@@ -84,7 +84,7 @@ const formattedTag = tag.charAt(0).toUpperCase() + tag.slice(1);
       currentPage={1}
       totalPages={Math.ceil(count / postsPerPage)}
       prevUrl={null}
-      nextUrl={count > postsPerPage ? `${basePath}/page/2/` : null}
+      nextUrl={count > postsPerPage ? `${basePath}/page/2` : null}
       basePath={basePath}
     />
   </div>

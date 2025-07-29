@@ -2,8 +2,7 @@
 import { getCollection } from 'astro:content';
 import Layout from '@layouts/Layout.astro';
 import { Icon } from 'astro-icon/components';
-import { siteConfig } from '@config/site';
-import {getRoutePath} from "../../utils/route";
+import Link from '@components/common/Link.astro';
 
 // Get all blog posts
 const posts = await getCollection('posts', ({ data }) => {
@@ -26,8 +25,8 @@ const categoryCounts = categories.map(category => {
 ---
 
 <Layout 
-  title={`Categories - ${siteConfig.title}`}
-  description="Browse all categories of posts on our blog"
+  title="类别"
+  description="浏览博客的所有类别"
 >
   <div class="w-full py-8">
     <header class="mb-10">
@@ -41,9 +40,8 @@ const categoryCounts = categories.map(category => {
     
     <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
       {categoryCounts.map(({ name, count, slug }) => (
-        <a 
-          href={getRoutePath(`/categories/${slug}`)}
-          class="flex items-center justify-between p-5 bg-white dark:bg-gray-800 rounded-lg shadow-md hover:shadow-lg transition-shadow border border-gray-200 dark:border-gray-700"
+        <Link href={`/categories/${slug}`}
+              class="flex items-center justify-between p-5 bg-white dark:bg-gray-800 rounded-lg shadow-md hover:shadow-lg transition-shadow border border-gray-200 dark:border-gray-700"
         >
           <div class="flex items-center">
             <Icon name="mdi:folder" class="w-6 h-6 text-blue-600 dark:text-blue-400 mr-3" />
@@ -54,7 +52,7 @@ const categoryCounts = categories.map(category => {
           <span class="bg-blue-100 dark:bg-blue-900 text-blue-800 dark:text-blue-200 text-xs font-medium px-2.5 py-0.5 rounded-full">
             {count} {count === 1 ? 'post' : 'posts'}
           </span>
-        </a>
+        </Link>
       ))}
     </div>
     

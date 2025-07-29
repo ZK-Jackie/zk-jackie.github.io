@@ -4,9 +4,16 @@
   "type": "module",
   "version": "1.0.0",
   "scripts": {
-    "dev": "astro dev",
-    "build": "astro build",
+    "dev": "astro dev --mode development",
+    "build:dev": "astro build --mode development",
+    "build:dev:compressed": "astro build --mode development && node scripts/postbuild.js",
+    "build:lagecy": "astro build --mode production",
+    "build:cf": "astro build --mode cloudflare && node scripts/postbuild.js",
+    "build:gh": "astro build --mode github && node scripts/postbuild.js",
+    "build": "npm run build:gh",
     "preview": "astro preview",
+    "check": "astro check",
+    "sync": "astro sync",
     "astro": "astro"
   },
   "dependencies": {
@@ -16,11 +23,18 @@
     "@iconify-json/mdi": "^1.2.3",
     "@tailwindcss/vite": "^4.1.7",
     "astro": "^5.7.14",
+    "astro-expressive-code": "^0.41.3",
     "astro-icon": "^1.1.5",
     "fuse.js": "^7.1.0",
-    "tailwindcss": "^4.1.7"
+    "html-minifier-terser": "^7.2.0",
+    "remark-gemoji": "^8.0.0",
+    "rimraf": "^6.0.1",
+    "tailwindcss": "^4.1.7",
+    "terser": "^5.43.1"
   },
   "devDependencies": {
-    "@tailwindcss/typography": "^0.5.16"
+    "@astrojs/check": "^0.9.4",
+    "@tailwindcss/typography": "^0.5.16",
+    "typescript": "^5.8.3"
   }
 }

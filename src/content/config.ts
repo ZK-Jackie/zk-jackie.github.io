@@ -72,10 +72,20 @@ const aboutCollection = defineCollection({
   }),
 });
 
+const coversCollection = defineCollection({
+  schema: z.object({
+    title: z.string(),
+    description: z.string().optional(),
+    image: z.string(),
+    order: z.number().optional(),
+  })
+})
+
 // Export collections
 export const collections = {
   posts: postsCollection,
   pages: pagesCollection,
   authors: authorsCollection,
   about: aboutCollection,
+  covers: coversCollection
 };

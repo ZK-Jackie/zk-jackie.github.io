@@ -3,15 +3,19 @@ import { Image } from 'astro:assets';
 import { Icon } from 'astro-icon/components';
 import Layout from '@layouts/Layout.astro';
 import { formatDate } from '@utils/date';
-import PostHeadings from '@layouts/components/table-of-contents/PostHeadings.astro';
+import PostTOC from '@layouts/components/table-of-contents/PostTOC.astro';
 import RelatedPosts from '@layouts/components/blog/RelatedPosts.astro';
 import SocialShare from '@layouts/components/blog/SocialShare.astro';
 import SeriesNav from '@layouts/components/widgets/SeriesNav.astro';
 import ReadingProgress from '@layouts/components/blog/ReadingProgress.astro';
 import Breadcrumb from '@layouts/components/common/Breadcrumb.astro';
-import ResponsiveTOC from "./components/table-of-contents/ResponsiveTOC.astro";
-import {getRoutePath} from "../utils/route";
+import ReactiveTOC from "@components/table-of-contents/ReactiveTOC.astro";
+import {getRoutePath} from "@utils/route";
 import Link from '@components/common/Link.astro';
+import {featuresConfig} from "@config";
+import Counter from "@components/common/Counter.astro";
+import { getReadingTime } from '@utils/readingTime';
+
 
 const { post, headings } = Astro.props;
 const { title, description, image, date, categories, authors, tags } = post.data;
@@ -35,6 +39,7 @@ if (categories && categories.length > 0) {
 }
 
 breadcrumbs.push({ name: title, url: canonicalURL });
+const stats = post.body ? getReadingTime(post.body) : null;
 ---
 
 <Layout
@@ -47,12 +52,13 @@ breadcrumbs.push({ name: title, url: canonicalURL });
   author={authors && authors.length > 0 ? { name: authors[0] } : undefined}
   tags={tags}
   categories={categories}
-  breadcrumbs={breadcrumbs}>
-  <!-- Reading Progress Bar -->
-<ReadingProgress />
-<ResponsiveTOC headings={headings} />
+>
 
-<article class="w-full py-8" style="transition: opacity 0.3s ease;">
+  <!-- Reading Progress Bar -->
+  <ReadingProgress />
+  <ReactiveTOC headings={headings} />
+
+  <article class="w-full py-8" style="transition: opacity 0.3s ease;">
     <!-- Breadcrumb Navigation -->
     <Breadcrumb items={breadcrumbs} className="mb-6" />
     
@@ -66,9 +72,7 @@ breadcrumbs.push({ name: title, url: canonicalURL });
             {date ? formatDate(date) : ''}
           </time>
         </div>
-        
 
-        
         <!-- Categories -->
         {categories && categories.length > 0 && (
           <div class="flex items-center">
@@ -101,6 +105,31 @@ breadcrumbs.push({ name: title, url: canonicalURL });
             </div>
           </div>
         )}
+
+        <!-- 字数统计 -->
+        {stats && (
+          <div class="flex items-center">
+            <Icon name="mdi:text" class="w-5 h-5 mr-1" />
+            <span>{stats.wordCountText}</span>
+          </div>
+        )}
+
+        <!-- 阅读时间 -->
+        {stats && (
+          <div class="flex items-center">
+            <Icon name="mdi:clock-outline" class="w-5 h-5 mr-1" />
+            <span>{stats.text}</span>
+          </div>
+        )}
+
+        <!-- Page Statistics -->
+        {featuresConfig.pageStatistics && (
+            <div class="flex items-center">
+              <Icon name="mdi:eye" class="w-5 h-5 mr-1" />
+              <Counter type="page_pv"/>
+            </div>
+          )
+        }
       </div>
       
       <!-- Title -->
@@ -153,7 +182,7 @@ breadcrumbs.push({ name: title, url: canonicalURL });
     
     <!-- Table of Contents -->
     <div class="mb-8 p-4 bg-gray-50 rounded-lg">
-      <PostHeadings headings={headings} />
+      <PostTOC headings={headings} />
     </div>
 
     
@@ -163,11 +192,12 @@ breadcrumbs.push({ name: title, url: canonicalURL });
     </div>
     
     <!-- Social Share Component -->
-    <!--<SocialShare-->
-    <!--  title={title}-->
-    <!--  description={description}-->
-    <!--  url={canonicalURL}-->
-    <!--/>-->
+    <SocialShare
+      title={title}
+      description={description}
+      url={canonicalURL}
+      platforms={['email', 'qrcode']}
+    />
     
     <!-- Related Posts -->
     <RelatedPosts currentPost={post} />

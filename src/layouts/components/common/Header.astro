@@ -1,14 +1,11 @@
 ---
 import ThemeToggle from "./ThemeToggle.astro";
 import { Image } from "astro:assets";
-import menu from "@config/menu.json";
-import { siteConfig } from "@config/site"; // Import siteConfig
-import logoSVG from "@assets/favicons/bitdoze_logo_better.svg";
-import {getRoutePath} from "../../../utils/route";
+import { navigationConfig, siteConfig } from "@config"; // Import siteConfig
 import Link from "./Link.astro";
 
 // Extract main menu items
-const mainMenu = menu.main;
+const mainMenu = navigationConfig.main;
 ---
 
 <header class="sticky top-0 z-50 bg-white dark:bg-gray-900 border-b border-gray-200 dark:border-gray-700 shadow-sm w-full">
@@ -17,14 +14,18 @@ const mainMenu = menu.main;
       <!-- Logo -->
       <div class="flex-shrink-0 flex items-center">
         <Link href="/" class="flex items-center">
-          <!--<Image-->
-          <!--  src={logoSVG}-->
-          <!--  alt={siteConfig.title + ' Logo'}-->
-          <!--  width={140}-->
-          <!--  height={140}-->
-          <!--  class="mr-2"-->
-          <!--/>-->
-          <span class="font-bold text-2xl">{siteConfig.title}</span>
+          {siteConfig.logoType === 'image' ? (
+              <Image
+                src={siteConfig.logo}
+                alt={siteConfig.title + ' Logo'}
+                width={siteConfig.logoSize ? Number(siteConfig.logoSize[0]) : 240}
+                height={siteConfig.logoSize ? Number(siteConfig.logoSize[1]) : 30}
+                class="mr-2"
+              />
+            ) : (
+              <span class="font-bold text-2xl">{siteConfig.title}</span>
+            )
+          }
         </Link>
       </div>
 
@@ -184,7 +185,7 @@ const mainMenu = menu.main;
   if (mobileMenuButton && mobileMenu && menuClosedIcon && menuOpenIcon) {
     mobileMenuButton.addEventListener('click', () => {
       const expanded = mobileMenuButton.getAttribute('aria-expanded') === 'true';
-      mobileMenuButton.setAttribute('aria-expanded', !expanded);
+      mobileMenuButton.setAttribute('aria-expanded', `${!expanded}`);
       mobileMenu.classList.toggle('hidden');
       menuClosedIcon.classList.toggle('hidden');
       menuOpenIcon.classList.toggle('hidden');

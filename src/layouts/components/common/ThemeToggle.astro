@@ -28,8 +28,22 @@
   function applyTheme() {
     const savedTheme = localStorage.getItem("theme");
     const prefersDark = window.matchMedia("(prefers-color-scheme: dark)").matches;
+    
+    let theme = savedTheme || (prefersDark ? 'dark' : 'light');
+    
+    const themeNames = {
+      'dark': 'github-dark',
+      'light': 'github-light'
+    };
+    
+    const actualTheme = themeNames[theme] || 'github-light';
 
-    if (savedTheme === "dark" || (!savedTheme && prefersDark)) {
+    // 应用主题
+    document.documentElement.setAttribute('data-theme', actualTheme);
+    document.documentElement.style.colorScheme = theme === 'dark' ? 'dark' : 'light';
+    
+    // 为了兼容现有样式，保持 dark 类
+    if (theme === 'dark') {
       document.documentElement.classList.add("dark");
     } else {
       document.documentElement.classList.remove("dark");
@@ -48,9 +62,19 @@
       const themeToggles = document.querySelectorAll("[id^='themeToggle']");
       themeToggles.forEach(toggle => {
         toggle.addEventListener("click", () => {
+          const isDark = document.documentElement.classList.contains('dark');
+          const newTheme = isDark ? 'light' : 'dark';
+          const newActualTheme = newTheme === 'dark' ? 'github-dark' : 'github-light';
+          
+          // 更新主题
+          document.documentElement.setAttribute('data-theme', newActualTheme);
+          document.documentElement.style.colorScheme = newTheme === 'dark' ? 'dark' : 'light';
+          
+          // 更新类名（兼容现有样式）
           document.documentElement.classList.toggle("dark");
-          const isDark = document.documentElement.classList.contains("dark");
-          localStorage.setItem("theme", isDark ? "dark" : "light");
+          
+          // 保存用户偏好
+          localStorage.setItem("theme", newTheme);
         });
       });
     });

@@ -4,9 +4,9 @@ import Layout from '@layouts/Layout.astro';
 import PostCard from '@components/blog/PostCard.astro';
 import Pagination from '@components/common/Pagination.astro';
 import { getPagination } from '@utils/pagination';
-import { siteConfig } from '@config/site';
+import { contentConfig, seoConfig } from '@config';
 
-export async function getStaticPaths({ paginate }) {
+export async function getStaticPaths() {
   const posts = await getCollection('posts', ({ data }) => {
     return !data.draft;
   });
@@ -24,8 +24,8 @@ export async function getStaticPaths({ paginate }) {
     });
     
     // Generate pages for this category
-    const totalPages = Math.ceil(categoryPosts.length / siteConfig.postsPerPage);
-    
+    const totalPages = Math.ceil(categoryPosts.length / contentConfig.postsPerPage);
+
     return Array.from({ length: totalPages }).map((_, i) => {
       const page = i + 1;
       // Skip page 1 as it's handled by the index.astro
@@ -47,8 +47,15 @@ export async function getStaticPaths({ paginate }) {
   });
 }
 
+interface Props { 
+  category: string;
+  posts: Array<any>;
+  page: number;
+  count: number;
+}
+
 const { category, posts, page, count } = Astro.props;
-const currentPage = parseInt(page);
+const currentPage = page;
 const basePath = `/categories/${category.toLowerCase()}`;
 
 // Get pagination data
@@ -62,24 +69,24 @@ const { startIndex, endIndex, prevUrl, nextUrl, totalPages } = getPagination({
 const paginatedPosts = posts.slice(startIndex, endIndex);
 
 // Set noindex based on site config
-const noindex = siteConfig.noindex.categories;
+const noindex = seoConfig.noindex.includes("/categories") || seoConfig.noindex.includes("*");
 
 // Format the category name for display
 const formattedCategory = category.charAt(0).toUpperCase() + category.slice(1);
 ---
 
 <Layout 
-  title={`${formattedCategory} - Page ${currentPage} - ${siteConfig.title}`}
-  description={`Browse posts in the ${formattedCategory} category - Page ${currentPage}`}
+  title={`类别：${formattedCategory} - 第${currentPage}页`}
+  description={`查看"${formattedCategory}"分类下的文章 - 第${currentPage}页`}
   noindex={noindex}
 >
   <div class="w-full py-8">
     <header class="mb-10">
       <h1 class="text-3xl md:text-4xl font-bold text-gray-900 dark:text-white mb-4">
-        Category: {formattedCategory}
+        分类：{formattedCategory}
       </h1>
       <p class="text-lg text-gray-700 dark:text-gray-300">
-        Page {currentPage} of {totalPages} - {count} {count === 1 ? 'post' : 'posts'} in this category
+        第 {currentPage} 页，共 {totalPages} 页 - 共 {count} 篇文章
       </p>
     </header>
     

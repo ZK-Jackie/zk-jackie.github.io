@@ -1,0 +1,45 @@
+---
+import type { Heading } from "./types";
+
+interface Props {
+  heading: Heading;
+  type: 'mobile' | 'desktop';
+  depth?: number;
+}
+
+const { heading, type, depth = 1 } = Astro.props;
+
+// 根据深度计算样式
+const getItemClasses = (currentDepth: number, itemType: string) => {
+  const baseClasses = `${itemType}-toc-link block rounded transition-colors border-l-2 border-transparent`;
+  const depthPadding = currentDepth === 1 ? 'py-2 px-3' : 'py-1 px-3';
+  const textSize = currentDepth === 1 ? 'text-base' : currentDepth === 2 ? 'text-sm' : 'text-xs';
+  const textColor = currentDepth === 1
+    ? 'text-gray-600 dark:text-gray-400'
+    : 'text-gray-500 dark:text-gray-500';
+  const hoverColor = 'hover:text-blue-600 dark:hover:text-blue-400 hover:bg-gray-50 dark:hover:bg-gray-700';
+
+  return `${baseClasses} ${depthPadding} ${textSize} ${textColor} ${hoverColor}`;
+};
+
+const getListMargin = (currentDepth: number) => {
+  return currentDepth > 1 ? `ml-${Math.min(currentDepth * 2, 8)} space-y-1` : 'space-y-1';
+};
+---
+
+<li>
+    <a href={`#${heading.slug}`}
+       class={getItemClasses(depth, type)}
+       data-target={heading.slug}
+       data-title={heading.text}
+    >
+      {heading.text}
+    </a>
+  {heading.subheadings.length > 0 && (
+          <ul class={getListMargin(depth + 1)}>
+            {heading.subheadings.map((subheading) => (
+                    <Astro.self heading={subheading} type={type} depth={depth + 1} />
+            ))}
+          </ul>
+  )}
+</li>

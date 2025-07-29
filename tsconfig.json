@@ -8,9 +8,13 @@
       "@components/*": ["src/layouts/components/*"],
       "@layouts/*": ["src/layouts/*"],
       "@config/*": ["src/config/*"],
+      "@config": ["src/config/index.ts"],
       "@utils/*": ["src/utils/*"],
       "@styles/*": ["src/styles/*"],
-      "@assets/*": ["src/assets/*"]
+      "@assets/*": ["src/assets/*"],
+      "@i18n/*": ["src/i18n/*"],
+      "jsx": ["react-jsx"],
+      "jsxImportSource": ["react"]
     }
   }
 }

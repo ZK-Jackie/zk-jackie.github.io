@@ -1,9 +1,7 @@
 ---
 import { getCollection } from 'astro:content';
 import Layout from '@layouts/Layout.astro';
-import { Icon } from 'astro-icon/components';
-import { siteConfig } from '@config/site';
-import {getRoutePath} from "../../utils/route";
+import Link from '@components/common/Link.astro';
 
 // Get all blog posts
 const posts = await getCollection('posts', ({ data }) => {
@@ -26,8 +24,8 @@ const tagCounts = tags.map(tag => {
 ---
 
 <Layout 
-  title={`Tags - ${siteConfig.title}`}
-  description="Browse all tags and topics on our blog"
+  title={`标签`}
+  description="浏览博客的所有标签和主题"
 >
   <div class="w-full py-8">
     <header class="mb-10">
@@ -41,9 +39,8 @@ const tagCounts = tags.map(tag => {
     
     <div class="flex flex-wrap gap-3">
       {tagCounts.map(({ name, count, slug }) => (
-        <a 
-          href={getRoutePath(`/tags/${slug}`)}
-          class="flex items-center gap-2 px-4 py-2 bg-white dark:bg-gray-800 rounded-full shadow-sm hover:shadow-md transition-shadow border border-gray-200 dark:border-gray-700"
+        <Link href={`/tags/${slug}`}
+              class="flex items-center gap-2 px-4 py-2 bg-white dark:bg-gray-800 rounded-full shadow-sm hover:shadow-md transition-shadow border border-gray-200 dark:border-gray-700"
         >
           <span class="font-medium text-gray-900 dark:text-white">
             #{name.charAt(0).toUpperCase() + name.slice(1)}
@@ -51,7 +48,7 @@ const tagCounts = tags.map(tag => {
           <span class="bg-blue-100 dark:bg-blue-900 text-blue-800 dark:text-blue-200 text-xs font-medium px-2.5 py-0.5 rounded-full">
             {count}
           </span>
-        </a>
+        </Link>
       ))}
     </div>
     

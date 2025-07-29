@@ -4,7 +4,7 @@ import Layout from '@layouts/Layout.astro';
 import PostCard from '@components/blog/PostCard.astro';
 import Pagination from '@components/common/Pagination.astro';
 import { getPagination } from '@utils/pagination';
-import { siteConfig } from '@config/site';
+import { contentConfig } from '@config';
 
 export async function getStaticPaths() {
   const posts = await getCollection('posts', ({ data }) => {
@@ -17,7 +17,7 @@ export async function getStaticPaths() {
   });
   
   // Calculate total pages
-  const totalPages = Math.ceil(sortedPosts.length / siteConfig.postsPerPage);
+  const totalPages = Math.ceil(sortedPosts.length / contentConfig.postsPerPage);
   
   // Generate paths for each page
   return Array.from({ length: totalPages }).map((_, i) => {
@@ -36,8 +36,14 @@ export async function getStaticPaths() {
   }).filter(Boolean); // Remove null entries
 }
 
+interface Props { 
+  posts: Array<any>;
+  page: number;
+  totalPosts: number;
+}
+
 const { posts, page, totalPosts } = Astro.props;
-const currentPage = parseInt(page);
+const currentPage = page;
 const basePath = '/blog';
 
 // Get pagination data
@@ -52,7 +58,7 @@ const paginatedPosts = posts.slice(startIndex, endIndex);
 ---
 
 <Layout 
-  title={`Blog - Page ${currentPage} - ${siteConfig.title}`}
+  title={`文章列表 - 第${currentPage}页`}
   description={`Explore our articles, tutorials, and insights - Page ${currentPage}`}
   noindex={true}
 >

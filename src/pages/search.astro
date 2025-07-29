@@ -1,16 +1,15 @@
 ---
-import { Image } from 'astro:assets';
 import Layout from '@layouts/Layout.astro';
-import { siteConfig } from '@config/site'; // Import siteConfig
-import {getRoutePath} from "../utils/route";
+import { siteConfig } from '@config'; // Import siteConfig
 ---
 
-<Layout title={`Search - ${siteConfig.title}`} description={`Search for articles and tutorials on ${siteConfig.title}`} noindex={true}>
+<Layout title={`搜索`} description={`在 ${siteConfig.title} 搜索文章和教程`} noindex={true}>
   <div class="max-w-4xl mx-auto px-4 py-8">
     <h1 class="text-3xl font-bold mb-8 text-center">搜索</h1>
     
     <div class="mb-8">
       <div class="relative">
+        <label for="search-input"></label>
         <input
           type="text" 
           id="search-input" 

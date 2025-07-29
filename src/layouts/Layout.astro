@@ -3,12 +3,11 @@ import "@styles/global.css";
 import Header from "@components/common/Header.astro";
 import Footer from "@components/common/Footer.astro";
 import SEO from "@components/common/SEO.astro";
-// import faviconSVG from "@assets/favicons/favicon.svg"; // Removed import
-import { siteConfig } from '@config/site';
-// Import favicon from public directory instead of assets
+import { siteConfig, envConfig, seoConfig, featuresConfig } from '@config';
 
 interface Props {
   title?: string;
+  withSiteName?: boolean;
   description?: string;
   image?: string;
   noindex?: boolean;
@@ -25,10 +24,14 @@ interface Props {
   categories?: string[];
 }
 
+const appId = featuresConfig.statistics ? envConfig.public?.PUBLIC_ANALYTICS_ID : null;
+const reportUrl = featuresConfig.statistics ? envConfig.public?.PUBLIC_ANALYTICS_COLLECT_URL : null;
+
 const { 
   title = siteConfig.title,
+  withSiteName = true,
   description = siteConfig.description,
-  image = siteConfig.ogImage,
+  image = seoConfig.ogImage,
   noindex = false,
   wideContent = false,
   article = false,
@@ -42,28 +45,67 @@ const {
 ---
 
 <!DOCTYPE html>
-<html lang="en">
+<html lang="zh-CN">
   <!-- Add script to prevent flash of wrong theme -->
   <script is:inline>
     // This script runs immediately on page load to prevent flash of wrong theme
     (function() {
-      // Check if dark mode is stored in localStorage or use system preference
-      if (localStorage.getItem('theme') === 'dark' || 
-          (!('theme' in localStorage) && window.matchMedia('(prefers-color-scheme: dark)').matches)) {
-        document.documentElement.classList.add('dark');
-      } else {
-        document.documentElement.classList.remove('dark');
+      function applyTheme(theme) {
+        // 模式名称、主题名称映射
+        const themeNames = {
+          'dark': 'github-dark',
+          'light': 'github-light'
+        };
+        const actualTheme = themeNames[theme] || 'github-light';  // 获取实际的主题名称
+        // 设置 html 元素的 data-theme 属性为实际主题名称，用于 astroExpressiveCode 在 useDarkModeMediaQuery 为 false 时让插件判断主题
+        document.documentElement.setAttribute('data-theme', actualTheme);
+        // 设置 html 元素在暗黑模式下有 class="dark"，用于当前主题样式（基于 TailwindCSS）
+        if (theme === 'dark') {
+          document.documentElement.classList.add('dark');
+        } else {
+          document.documentElement.classList.remove('dark');
+        }
+        // 设置 html 元素的 color-scheme 属性，在暗黑模式下为 "dark"，否则为 "light"
+        document.documentElement.style.colorScheme = theme === 'dark' ? 'dark' : 'light';
       }
+      // 附：TailwindCSS 的 dark 前缀：html 的 dark 类 > prefers-color-scheme: dark > 默认亮色
+
+      // 检查用户偏好：本地存储 > 系统偏好 > 默认亮色
+      const savedTheme = localStorage.getItem('theme');
+      const systemPrefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+      let theme;
+      if (savedTheme === 'dark') {
+        theme = 'dark';
+      } else if (savedTheme === 'light') {
+        theme = 'light';
+      } else {
+        // 没有保存的偏好，跟随系统
+        theme = systemPrefersDark ? 'dark' : 'light';
+      }
+      applyTheme(theme);
     })();
   </script>
   <head>
     <meta charset="UTF-8" />
     <meta name="robots" content="noindex">
     <meta name="viewport" content="width=device-width" />
+    <meta name="color-scheme" content="light dark" />
     <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
     <link rel="icon" type="image/x-icon" href="/favicon.ico" />
-    <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
-   
+    <link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png">
+    <link rel="icon" type="image/png" sizes="32x32" href="/favicon-32x32.png">
+    <link rel="icon" type="image/png" sizes="16x16" href="/favicon-16x16.png">
+    <link rel="manifest" href="/site.webmanifest">
+
+    {appId && reportUrl && (
+      <script id="counterscale-script"
+              src="/lib/tracker.min.js"
+              data-site-id={appId}
+              data-reporter-url={reportUrl}
+              async
+      />
+    )}
+
     <meta name="generator" content={Astro.generator} />
     
     <!-- Critical CSS to prevent FOUC -->
@@ -126,19 +168,19 @@ const {
     </style>
     
     <!-- SEO Component -->
-    <!--<SEO-->
-    <!--  title={title}-->
-    <!--  description={description}-->
-    <!--  image={image}-->
-    <!--  article={article}-->
-    <!--  noindex={noindex}-->
-    <!--  canonical={canonical}-->
-    <!--  publishDate={publishDate}-->
-    <!--  modifiedDate={modifiedDate}-->
-    <!--  author={author}-->
-    <!--  tags={tags}-->
-    <!--  categories={categories}-->
-    <!--/>-->
+    <SEO
+      title={`${title} - ${withSiteName ? siteConfig.title : ''}`}
+      description={description}
+      image={image}
+      article={article}
+      noindex={noindex}
+      canonical={canonical}
+      publishDate={publishDate}
+      modifiedDate={modifiedDate}
+      author={author}
+      tags={tags}
+      categories={categories}
+    />
   
   
     
@@ -169,7 +211,6 @@ const {
             }
           }
         }
-        
         return cssLoaded;
       }
       
@@ -195,6 +236,7 @@ const {
         window.addEventListener('load', revealContent);
       }
     </script>
+
     <!-- Full-width header -->
     <Header />
     

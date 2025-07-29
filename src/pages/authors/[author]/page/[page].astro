@@ -4,9 +4,9 @@ import Layout from '@layouts/Layout.astro';
 import PostCard from '@components/blog/PostCard.astro';
 import Pagination from '@components/common/Pagination.astro';
 import { getPagination } from '@utils/pagination';
-import { siteConfig } from '@config/site';
+import { contentConfig, seoConfig } from '@config';
 
-export async function getStaticPaths({ paginate }) {
+export async function getStaticPaths() {
   const posts = await getCollection('posts', ({ data }) => {
     return !data.draft;
   });
@@ -24,7 +24,7 @@ export async function getStaticPaths({ paginate }) {
     });
     
     // Generate pages for this author
-    const totalPages = Math.ceil(authorPosts.length / siteConfig.postsPerPage);
+    const totalPages = Math.ceil(authorPosts.length / contentConfig.postsPerPage);
     
     return Array.from({ length: totalPages }).map((_, i) => {
       const page = i + 1;
@@ -47,6 +47,13 @@ export async function getStaticPaths({ paginate }) {
   });
 }
 
+interface Props { 
+  author: string;
+  posts: Array<any>;
+  page: string;
+  count: number;
+}
+
 const { author, posts, page, count } = Astro.props;
 const currentPage = parseInt(page);
 const basePath = `/authors/${author.toLowerCase()}`;
@@ -62,7 +69,7 @@ const { startIndex, endIndex, prevUrl, nextUrl, totalPages } = getPagination({
 const paginatedPosts = posts.slice(startIndex, endIndex);
 
 // Set noindex based on site config
-const noindex = siteConfig.noindex.authors;
+const noindex = seoConfig.noindex.includes("/authors") || seoConfig.noindex.includes("*")
 
 // Format the author name for display
 const formattedAuthor = author.split(' ').map(word => 
@@ -70,18 +77,18 @@ const formattedAuthor = author.split(' ').map(word =>
 ).join(' ');
 ---
 
-<Layout 
-  title={`Posts by ${formattedAuthor} - Page ${currentPage} - ${siteConfig.title}`}
-  description={`Browse posts written by ${formattedAuthor} - Page ${currentPage}`}
+<Layout
+  title={`作者：${formattedAuthor} - 第${page}页`}
+  description={`查看${formattedAuthor}写的文章 - 第${page}页`}
   noindex={noindex}
 >
   <div class="w-full py-8">
     <header class="mb-10">
       <h1 class="text-3xl md:text-4xl font-bold text-gray-900 dark:text-white mb-4">
-        Author: {formattedAuthor}
+        作者：{formattedAuthor}
       </h1>
       <p class="text-lg text-gray-700 dark:text-gray-300">
-        Page {currentPage} of {totalPages} - {count} {count === 1 ? 'post' : 'posts'} by this author
+        第 {page} 页，共 {totalPages} 页 - 共 {count} 篇文章
       </p>
     </header>
     

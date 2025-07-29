@@ -4,7 +4,7 @@ import Layout from '@layouts/Layout.astro';
 import PostCard from '@components/blog/PostCard.astro';
 import Pagination from '@components/common/Pagination.astro';
 import { getPagination } from '@utils/pagination';
-import { siteConfig } from '@config/site';
+import { seoConfig } from '@config';
 
 export async function getStaticPaths() {
   const posts = await getCollection('posts', ({ data }) => {
@@ -47,15 +47,15 @@ const { postsPerPage } = getPagination({
 const paginatedPosts = posts.slice(0, postsPerPage);
 
 // Set noindex based on site config
-const noindex = siteConfig.noindex.categories;
+const noindex = seoConfig.noindex.includes("/categories") || seoConfig.noindex.includes("*");
 
 // Format the category name for display
 const formattedCategory = category.charAt(0).toUpperCase() + category.slice(1);
 ---
 
 <Layout 
-  title={`${formattedCategory} - ${siteConfig.title}`}
-  description={`Browse all posts in the ${formattedCategory} category`}
+  title={`类别：${formattedCategory}`}
+  description={`浏览 ${formattedCategory} 类别下的所有文章`}
   noindex={noindex}
 >
   <div class="w-full py-8">

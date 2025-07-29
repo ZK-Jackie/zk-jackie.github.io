@@ -3,8 +3,7 @@ import { getCollection } from 'astro:content';
 import Layout from '@layouts/Layout.astro';
 import { Icon } from 'astro-icon/components';
 import Breadcrumb from '@layouts/components/common/Breadcrumb.astro';
-import { siteConfig } from '@config/site';
-import {getRoutePath} from "../../utils/route"; // Import siteConfig
+import Link from '@components/common/Link.astro';
 
 // Get all posts
 const allPosts = await getCollection('posts', ({ data }) => {
@@ -35,7 +34,7 @@ allPosts.forEach(post => {
 });
 
 // Sort each series by position
-for (const [seriesName, posts] of seriesMap.entries()) {
+for (const [_seriesName, posts] of seriesMap.entries()) {
   posts.sort((a: any, b: any) => {
     // First try to sort by position (if they're numbers)
     const posA = parseInt(a.position);
@@ -73,8 +72,8 @@ const breadcrumbs = [
 ---
 
 <Layout 
-  title={`Article Series | ${siteConfig.title}`}
-  description="Browse our collection of article series on various topics"
+  title={`合集`}
+  description="浏览博客文章系列合集"
 >
   <div class="max-w-5xl mx-auto px-4 sm:px-6 py-12">
     <!-- Breadcrumb Navigation -->
@@ -107,15 +106,12 @@ const breadcrumbs = [
             
             <div class="mt-6">
               <ol class="relative border-l border-gray-300 dark:border-gray-700 ml-3">
-                {series.posts.map((post: any, index: number) => (
+                {series.posts.map((post: any, _index: number) => (
                   <li class="mb-6 ml-6">
                     <span class="absolute flex items-center justify-center w-8 h-8 bg-blue-100 dark:bg-blue-900 rounded-full -left-4 ring-4 ring-white dark:ring-gray-800 text-blue-600 dark:text-blue-400">
                       {post.position}
                     </span>
-                    <a 
-                      href={getRoutePath(`/${post.slug}`)}
-                      class="group"
-                    >
+                    <Link href={`/${post.slug}`} class="group">
                       <h3 class="flex items-center text-lg font-semibold text-gray-900 dark:text-white group-hover:text-blue-600 dark:group-hover:text-blue-400">
                         {post.title}
                       </h3>
@@ -124,7 +120,7 @@ const breadcrumbs = [
                           {post.description}
                         </p>
                       )}
-                    </a>
+                    </Link>
                   </li>
                 ))}
               </ol>

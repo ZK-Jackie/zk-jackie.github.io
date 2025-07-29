@@ -2,18 +2,15 @@
 import { Icon } from 'astro-icon/components';
 import { Image } from 'astro:assets';
 import { getCollection } from 'astro:content';
-import menu from "@config/menu.json";
-import social from "@config/social.json";
-import { siteConfig } from "@config/site";
-import logoSVG from "@assets/favicons/bitdoze_logo_better.svg";
+import { navigationConfig, socialConfig, siteConfig, localeConfig, featuresConfig } from "@config";
 import Link from "./Link.astro";
-
+import Counter from "./Counter.astro";
 
 // Extract footer menu items
-const footerMenu = menu.footer;
+const footerMenu = navigationConfig.footer || [];
 
 // Filter social media links that are not empty
-const socialLinks = Object.entries(social)
+const socialLinks = Object.entries(socialConfig)
   .filter(([_, url]) => url !== "")
   .map(([platform, url]) => ({ platform, url }));
   
@@ -28,19 +25,24 @@ const recentPosts = allPosts
   .slice(0, 3);
 ---
 
+
 <footer class="bg-white dark:bg-gray-900 border-t border-gray-200 dark:border-gray-700 mt-10 w-full">
     <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 w-full py-8">
         <div class="grid grid-cols-1 md:grid-cols-3 gap-8">
             <!-- Logo and Description -->
             <div class="flex flex-col space-y-4">
-                <!--<Image-->
-                <!--        src={logoSVG}-->
-                <!--        alt={siteConfig.title + ' Logo'}-->
-                <!--        width={140}-->
-                <!--        height={140}-->
-                <!--        class="mr-2"-->
-                <!--/>-->
-                <span class="font-bold text-2xl">{siteConfig.title}</span>
+                {siteConfig.logoType === 'image' ? (
+                    <Image
+                        src={siteConfig.logo}
+                        alt={siteConfig.title + ' Logo'}
+                        width={siteConfig.logoSize ? Number(siteConfig.logoSize[0]) : 240}
+                        height={siteConfig.logoSize ? Number(siteConfig.logoSize[1]) : 30}
+                        class="mr-2"
+                    />
+                    ) : (
+                    <span class="font-bold text-2xl">{siteConfig.title}</span>
+                    )
+                }
                 <p class="text-gray-500 dark:text-gray-400 text-sm">
                     <!--Providing valuable resources and tutorials for web developers and tech enthusiasts.-->
                   {siteConfig.description}
@@ -115,26 +117,34 @@ const recentPosts = allPosts
         <!-- Copyright -->
         <div class="border-t border-gray-200 dark:border-gray-700 mt-8 pt-6">
             <div class="flex flex-col md:flex-row justify-between items-center gap-4 text-sm text-gray-500 dark:text-gray-400">
-                <!-- ICP 备案号 -->
-                <div>
-                    {siteConfig.icpNumber ?
-                        <a href="https://beian.miit.gov.cn/#/Integrated/index" target="_blank" rel="noopener noreferrer">
-                            {siteConfig.icpNumber}
-                        </a> : ""
-                    }
-                </div>
-                <!-- 网安备案号 -->
-                <div>
-                    {siteConfig.publicRegistration ?
-                        <a href="https://beian.mps.gov.cn/#/query/webSearch" target="_blank" rel="noopener noreferrer">
-                          {siteConfig.publicRegistration}
-                        </a> : ""
-                    }
-                </div>
-                <!-- 版权信息 -->
-                <div>
-                    <p>{siteConfig.copyright}</p>
-                </div>
+                {   // ICP 备案
+                    localeConfig.icpNumber ?
+                    <a href="https://beian.miit.gov.cn/#/Integrated/index" target="_blank" rel="noopener noreferrer">
+                        {localeConfig.icpNumber}
+                    </a> : null
+                }
+
+                {   // 网安备案
+                    localeConfig.publicRegistration ?
+                    <a href="https://beian.mps.gov.cn/#/query/webSearch" target="_blank" rel="noopener noreferrer">
+                      {localeConfig.publicRegistration}
+                    </a> : null
+                }
+
+                {   // 站点统计
+                    featuresConfig.siteStatistics ?
+                    <div class="flex items-center gap-1">
+                        <Icon name="mdi:account" class="w-4 h-4" />
+                        访客数: <Counter type="site_uv" />
+                    </div> : null
+                }
+
+                {   // 版权信息
+                    siteConfig.copyright ?
+                    <div>
+                        <p>{siteConfig.copyright}</p>
+                    </div> : null
+                }
             </div>
         </div>
     </div>

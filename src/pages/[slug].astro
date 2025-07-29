@@ -1,6 +1,6 @@
 ---
 import Layout from "@layouts/Layout.astro";
-import { getCollection, getEntryBySlug } from "astro:content";
+import { getCollection } from "astro:content";
 // Import all widget components for MDX files
 import * as MarkdownComponents from '@layouts/components/MarkdownComponents.astro';
 
@@ -29,7 +29,6 @@ const components = MarkdownComponents;
     <div class="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
       <div class="mb-10">
         <h1 class="text-3xl md:text-4xl font-bold text-gray-900 dark:text-white mb-6">{title}</h1>
-        
         <div class="prose prose-lg dark:prose-invert max-w-none">
           <Content components={components} />
         </div>

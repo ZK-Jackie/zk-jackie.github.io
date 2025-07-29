@@ -1,31 +1,16 @@
 ---
 // src/layouts/components/table-of-contents/ResponsiveTOC.astro
 import type { MarkdownHeading } from "astro";
-import type { Heading } from "./TOCHeading.astro";
+import type { Heading } from "./types";
+import {buildToc} from "./TOCUtils";
+import ReactiveHeading from "./ReactiveHeading.astro";
 
 interface Props {
   headings: MarkdownHeading[];
 }
 
-function buildToc(headings: MarkdownHeading[]) {
-  const toc: Heading[] = [];
-  const parentHeadings = new Map();
-  headings
-    .filter((h) => h.depth <= 3)
-    .forEach((h) => {
-      const heading = { ...h, subheadings: [] };
-      parentHeadings.set(heading.depth, heading);
-      if (heading.depth === 2) {
-        toc.push(heading);
-      } else {
-        parentHeadings.get(heading.depth - 1).subheadings.push(heading);
-      }
-    });
-  return toc;
-}
-
 const { headings } = Astro.props;
-const tableOfContents = buildToc(headings);
+const tableOfContents: Heading[] = buildToc(headings);
 ---
 
 <!-- 移动端顶部下拉目录 -->
@@ -40,30 +25,7 @@ const tableOfContents = buildToc(headings);
         <div id="mobile-toc-content" class="hidden mt-3 max-h-64 overflow-y-auto">
             <ul class="space-y-1">
                 {tableOfContents.map((heading) => (
-                    <li>
-                        <a href={`#${heading.slug}`}
-                           class="mobile-toc-link block py-2 px-3 text-gray-600 dark:text-gray-400 hover:text-blue-600 dark:hover:text-blue-400 hover:bg-gray-50 dark:hover:bg-gray-700 rounded transition-colors"
-                           data-target={heading.slug}
-                           data-title={heading.text}
-                          >
-                            {heading.text}
-                        </a>
-                        {heading.subheadings.length > 0 && (
-                            <ul class="ml-4 space-y-1">
-                                {heading.subheadings.map((subheading) => (
-                                    <li>
-                                        <a href={`#${subheading.slug}`}
-                                           class="mobile-toc-link block py-1 px-3 text-sm text-gray-500 dark:text-gray-500 hover:text-blue-600 dark:hover:text-blue-400 hover:bg-gray-50 dark:hover:bg-gray-700 rounded transition-colors"
-                                           data-target={subheading.slug}
-                                           data-title={subheading.text}
-                                        >
-                                            {subheading.text}
-                                        </a>
-                                    </li>
-                                ))}
-                            </ul>
-                        )}
-                    </li>
+                  <ReactiveHeading heading={heading} type="mobile" />
                 ))}
             </ul>
         </div>
@@ -74,26 +36,41 @@ const tableOfContents = buildToc(headings);
 <div class="hidden lg:block fixed top-20 right-6 z-30 w-64 max-h-96 overflow-y-auto bg-white dark:bg-gray-800 rounded-lg shadow-lg border border-gray-200 dark:border-gray-700 p-4" id="desktop-toc">
     <h3 class="text-lg font-semibold text-gray-800 dark:text-gray-200 mb-3">目录</h3>
     <ul class="space-y-1">
-      {tableOfContents.map((heading) => (
-              <li>
-                  <a href={`#${heading.slug}`} class="desktop-toc-link block py-2 px-3 text-gray-600 dark:text-gray-400 hover:text-blue-600 dark:hover:text-blue-400 hover:bg-gray-50 dark:hover:bg-gray-700 rounded transition-colors border-l-2 border-transparent" data-target={heading.slug}>
-                    {heading.text}
-                  </a>
-                {heading.subheadings.length > 0 && (
-                        <ul class="ml-4 space-y-1">
-                          {heading.subheadings.map((subheading) => (
-                                  <li>
-                                      <a href={`#${subheading.slug}`} class="desktop-toc-link block py-1 px-3 text-sm text-gray-500 dark:text-gray-500 hover:text-blue-600 dark:hover:text-blue-400 hover:bg-gray-50 dark:hover:bg-gray-700 rounded transition-colors border-l-2 border-transparent" data-target={subheading.slug}>
-                                        {subheading.text}
-                                      </a>
-                                  </li>
-                          ))}
-                        </ul>
-                )}
-              </li>
-      ))}
+        {tableOfContents.map((heading) => (
+          <ReactiveHeading heading={heading} type="desktop" />
+        ))}
     </ul>
 </div>
+
+<style>
+/* 自定义滚动条样式 */
+#desktop-toc {
+    scrollbar-width: thin;
+    scrollbar-color: rgba(156, 163, 175, 0.5) transparent;
+}
+
+#desktop-toc::-webkit-scrollbar {
+    width: 6px;
+}
+
+#desktop-toc::-webkit-scrollbar-track {
+    background: transparent;
+}
+
+#desktop-toc::-webkit-scrollbar-thumb {
+    background-color: rgba(156, 163, 175, 0.5);
+    border-radius: 20px;
+}
+
+.dark #desktop-toc::-webkit-scrollbar-thumb {
+    background-color: rgba(209, 213, 219, 0.5);
+}
+
+/* 确保目录在合适的 z-index 层级 */
+#mobile-toc {
+    backdrop-filter: blur(8px);
+}
+</style>
 
 <script>
     document.addEventListener('DOMContentLoaded', () => {
@@ -101,6 +78,63 @@ const tableOfContents = buildToc(headings);
         const mobileToggle = document.getElementById('mobile-toc-toggle');
         const mobileContent = document.getElementById('mobile-toc-content');
         const mobileTocTitle = document.getElementById('mobile-toc-title');
+        const mobileToc = document.getElementById('mobile-toc');
+        const desktopToc = document.getElementById('desktop-toc');
+
+        // 只获取目录中存在的标题元素
+        const tocLinks = document.querySelectorAll('.desktop-toc-link, .mobile-toc-link');
+        const tocHeadings: Array<HTMLElement> = [];
+
+        // 初始化目录显示状态
+        initializeTocVisibility();
+
+        function initializeTocVisibility() {
+            // 初始检查是否在第一个标题之上
+            const aboveFirstHeading = isAboveFirstHeading();
+            updateTocVisibility(aboveFirstHeading, false); // 初始化时不使用动画
+        }
+
+        // 更新目录可见性
+        function updateTocVisibility(shouldHide: boolean, useTransition = true) {
+            const duration = useTransition ? '100ms' : '0ms';
+            if (shouldHide) {
+                // 淡出消失
+                if (mobileToc) {
+                    mobileToc.style.transition = `opacity ${duration} ease-out, transform ${duration} ease-out`;
+                    mobileToc.style.opacity = '0';
+                    mobileToc.style.transform = 'translateY(-10px)';
+                    setTimeout(() => {
+                        if (mobileToc.style.opacity === '0') {
+                            mobileToc.style.visibility = 'hidden';
+                        }
+                    }, useTransition ? 100 : 0);
+                }
+                if (desktopToc) {
+                    desktopToc.style.transition = `opacity ${duration} ease-out, transform ${duration} ease-out`;
+                    desktopToc.style.opacity = '0';
+                    desktopToc.style.transform = 'translateX(20px)';
+                    setTimeout(() => {
+                        if (desktopToc.style.opacity === '0') {
+                            desktopToc.style.visibility = 'hidden';
+                        }
+                    }, useTransition ? 100 : 0);
+                }
+            } else {
+                // 渐入出现
+                if (mobileToc) {
+                    mobileToc.style.visibility = 'visible';
+                    mobileToc.style.transition = `opacity ${duration} ease-in, transform ${duration} ease-in`;
+                    mobileToc.style.opacity = '1';
+                    mobileToc.style.transform = 'translateY(0)';
+                }
+                if (desktopToc) {
+                    desktopToc.style.visibility = 'visible';
+                    desktopToc.style.transition = `opacity ${duration} ease-in, transform ${duration} ease-in`;
+                    desktopToc.style.opacity = '1';
+                    desktopToc.style.transform = 'translateX(0)';
+                }
+            }
+        }
 
         if (mobileToggle && mobileContent) {
             mobileToggle.addEventListener('click', () => {
@@ -117,11 +151,6 @@ const tableOfContents = buildToc(headings);
             });
         }
 
-
-        // 只获取目录中存在的标题元素
-        const tocLinks = document.querySelectorAll('.desktop-toc-link, .mobile-toc-link');
-        const tocHeadings: Array<HTMLElement> = [];
-
         // 根据目录链接收集对应的标题元素
         tocLinks.forEach(link => {
             const targetId = link.getAttribute('data-target');
@@ -133,7 +162,6 @@ const tableOfContents = buildToc(headings);
 
         // 更新移动端标题显示
         function updateMobileTocTitle(activeTitle: string | null) {
-            console.log(activeTitle)
             if (mobileTocTitle && mobileContent) {
                 const isExpanded = !mobileContent.classList.contains('hidden');
                 if (isExpanded) {
@@ -170,7 +198,7 @@ const tableOfContents = buildToc(headings);
 
         // 检测是否在第一个标题之上
         function isAboveFirstHeading(): boolean {
-            if (tocHeadings.length === 0) return false;
+            if (tocHeadings.length === 0) return true;
 
             const firstHeading = tocHeadings[0];
             const scrollY = window.scrollY;
@@ -235,6 +263,7 @@ const tableOfContents = buildToc(headings);
 
             scrollTimeout = window.setTimeout(() => {
                 const aboveFirstHeading = isAboveFirstHeading();
+                updateTocVisibility(aboveFirstHeading, true);
 
                 if (aboveFirstHeading) {
                     // 移除所有活跃状态
@@ -245,6 +274,15 @@ const tableOfContents = buildToc(headings);
 
                     // 更新移动端标题显示
                     updateMobileTocTitle("目录");
+
+                    // 收起移动端下拉菜单
+                    if (mobileContent && !mobileContent.classList.contains('hidden')) {
+                        mobileContent.classList.add('hidden');
+                        const svg = mobileToggle?.querySelector('svg');
+                        if (svg) {
+                            svg.classList.remove('rotate-180');
+                        }
+                    }
                 }
             }, 50);
         });
@@ -257,9 +295,11 @@ const tableOfContents = buildToc(headings);
         // 平滑滚动到目标位置
         tocLinks.forEach(link => {
             link.addEventListener('click', (e) => {
-                e.preventDefault();
+                e.preventDefault(); // 阻止默认行为
+
                 const targetId = link.getAttribute('data-target');
                 const targetElement = targetId ? document.getElementById(targetId) : null;
+                history.pushState(null, '', `#${targetId}`); // 更新浏览器地址栏，但不触发页面跳转
 
                 if (targetElement) {
                     // 计算偏移量（考虑固定头部）
@@ -284,33 +324,3 @@ const tableOfContents = buildToc(headings);
         });
     });
 </script>
-
-<style>
-/* 自定义滚动条样式 */
-#desktop-toc {
-  scrollbar-width: thin;
-  scrollbar-color: rgba(156, 163, 175, 0.5) transparent;
-  }
-
-#desktop-toc::-webkit-scrollbar {
-  width: 6px;
-  }
-
-#desktop-toc::-webkit-scrollbar-track {
-  background: transparent;
-  }
-
-#desktop-toc::-webkit-scrollbar-thumb {
-  background-color: rgba(156, 163, 175, 0.5);
-  border-radius: 20px;
-  }
-
-.dark #desktop-toc::-webkit-scrollbar-thumb {
-  background-color: rgba(209, 213, 219, 0.5);
-  }
-
-/* 确保目录在合适的 z-index 层级 */
-#mobile-toc {
-  backdrop-filter: blur(8px);
-}
-</style>

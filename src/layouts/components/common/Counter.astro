@@ -1,0 +1,24 @@
+---
+interface CounterProps extends astroHTML.JSX.HTMLAttributes {
+  type: "site_pv" | "site_uv" | "page_pv";
+}
+const typeIdMapping = {
+  // 站点访问次数
+  "site_pv": "site_pv",
+  // 站点访问人次
+  "site_uv": "site_uv",
+  // 页面访问次数
+  "page_pv": "page_pv",
+  // 错误类型
+  "error": ""
+}
+const {type, class: className, ...props} = Astro.props as CounterProps;
+let displayId = typeIdMapping[type];
+
+if (!displayId) {
+  console.error(`Invalid type "${type}" for Counter component. Valid types are: ${Object.keys(typeIdMapping).join(", ")}`);
+  displayId = ""
+}
+---
+
+<span id={displayId} class={className} {...props}></span>

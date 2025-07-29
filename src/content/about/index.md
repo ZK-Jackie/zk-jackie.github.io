@@ -1,7 +1,7 @@
 ---
 title: "关于本站"
 meta_title: "About"
-image: "/src/assets/images/avatar.png"
+image: "/assets/images/avatar.png"
 draft: false
 
 what_i_do:

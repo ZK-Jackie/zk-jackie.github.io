@@ -4,7 +4,6 @@ import Layout from '@layouts/Layout.astro';
 import PostCard from '@components/blog/PostCard.astro';
 import Pagination from '@components/common/Pagination.astro';
 import { getPagination } from '@utils/pagination';
-import { siteConfig } from '@config/site';
 
 // Get all blog posts and sort by date (newest first)
 const posts = await getCollection('posts', ({ data }) => {
@@ -28,14 +27,14 @@ const paginatedPosts = sortedPosts.slice(0, postsPerPage);
 ---
 
 <Layout
-  title={`Blog - ${siteConfig.title}`}
-  description="Explore our latest articles, tutorials, and insights"
+  title={`文章`}
+  description="最新的技术文章和学习笔记"
 >
   <main class="w-full py-8">
     <header class="mb-10">
       <h1 class="text-3xl md:text-4xl font-bold text-gray-900 dark:text-white mb-4">文章</h1>
       <p class="text-lg text-gray-700 dark:text-gray-300">
-        教程、见解、笔记
+        技术文章、学习笔记
       </p>
     </header>
     
@@ -49,7 +48,7 @@ const paginatedPosts = sortedPosts.slice(0, postsPerPage);
       currentPage={1}
       totalPages={Math.ceil(sortedPosts.length / postsPerPage)}
       prevUrl={null}
-      nextUrl={sortedPosts.length > postsPerPage ? `/blog/page/2/` : null}
+      nextUrl={sortedPosts.length > postsPerPage ? `/blog/page/2` : null}
       basePath="/blog"
     />
   </main>
