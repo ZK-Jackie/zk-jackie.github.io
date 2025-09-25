@@ -1,0 +1,12 @@
+---
+import Layout from '@layouts/Layout.astro';
+import SearchComponent from '@layouts/components/search/SearchComponent.astro';
+import { siteConfig } from '@config';
+---
+
+<Layout title={`搜索`} description={`在 ${siteConfig.title} 搜索文章和教程`} noindex={true}>
+  <div class="max-w-4xl mx-auto px-4 py-8">
+    <h1 class="text-3xl font-bold mb-8 text-center">搜索</h1>
+    <SearchComponent />
+  </div>
+</Layout>

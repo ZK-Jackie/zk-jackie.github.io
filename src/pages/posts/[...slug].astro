@@ -1,0 +1,39 @@
+---
+import { getCollection, render, type CollectionEntry } from 'astro:content';
+import PostLayout from '@layouts/PostLayout.astro';
+// Import all widget components for MDX files
+import * as MarkdownComponents from '@layouts/components/MarkdownComponents.astro';
+import {chain, notDataDraft, notDataSlugStartsWithSlash} from "@utils/collectionUtils";
+
+// Get all blog posts
+export async function getStaticPaths() {
+  const posts = await getCollection('posts', chain(notDataDraft, notDataSlugStartsWithSlash));
+
+  return posts.map(post => {
+    // Extract the slug from the canonical URL or use the file name
+    const slug = post.data.canonical
+      ? new URL(post.data.canonical).pathname.split('/').filter(Boolean).pop()
+      : post.id;
+
+    return {
+      params: { slug },
+      props: { post },
+    };
+  });
+}
+
+interface Props {
+  post: CollectionEntry<"posts">;
+}
+
+const { post } = Astro.props;
+// Pass all widget components to MDX content
+const { Content, headings, remarkPluginFrontmatter } = await render(post);
+
+// Make all components available to MDX content
+const components = MarkdownComponents;
+---
+
+<PostLayout postSlug={post.id} postData={post.data} postHeadings={headings}>
+  <Content components={components} />
+</PostLayout>

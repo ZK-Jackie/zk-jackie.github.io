@@ -1,0 +1,349 @@
+---
+import ThemeToggle from "./ThemeToggle.astro";
+import { Image } from "astro:assets";
+import { navigationConfig, siteConfig } from "@config"; // Import siteConfig
+import Link from "./Link.astro";
+
+// Extract main menu items
+const mainMenu = navigationConfig.main;
+---
+
+<header class="sticky top-0 z-50 bg-white dark:bg-gray-900 border-b border-gray-200 dark:border-gray-700 shadow-sm w-full">
+  <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 w-full">
+    <div class="flex justify-between items-center h-16">
+      <!-- Logo -->
+      <div class="flex-shrink-0 flex items-center">
+        <Link href="/" class="flex items-center">
+          {siteConfig.logoType === 'image' ? (
+              <Image
+                src={siteConfig.logo}
+                alt={siteConfig.title + ' Logo'}
+                width={siteConfig.logoSize ? Number(siteConfig.logoSize[0]) : 240}
+                height={siteConfig.logoSize ? Number(siteConfig.logoSize[1]) : 30}
+                class="mr-2"
+              />
+            ) : (
+              <span class="font-bold text-2xl">{siteConfig.title}</span>
+            )
+          }
+        </Link>
+      </div>
+
+      <!-- Mobile menu button -->
+      <div class="flex md:hidden">
+        <button
+          type="button"
+          id="mobile-menu-button"
+          class="text-gray-500 hover:text-gray-900 dark:text-gray-400 dark:hover:text-white p-2 rounded-md"
+          aria-controls="mobile-menu"
+          aria-expanded="false"
+        >
+          <span class="sr-only">Open main menu</span>
+          <!-- Icon when menu is closed -->
+          <svg
+            id="menu-closed-icon"
+            class="block h-6 w-6"
+            xmlns="http://www.w3.org/2000/svg"
+            fill="none"
+            viewBox="0 0 24 24"
+            stroke="currentColor"
+            aria-hidden="true"
+          >
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16" />
+          </svg>
+          <!-- Icon when menu is open -->
+          <svg
+            id="menu-open-icon"
+            class="hidden h-6 w-6"
+            xmlns="http://www.w3.org/2000/svg"
+            fill="none"
+            viewBox="0 0 24 24"
+            stroke="currentColor"
+            aria-hidden="true"
+          >
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+          </svg>
+        </button>
+      </div>
+
+      <!-- Desktop menu -->
+      <nav class="hidden md:flex space-x-4 items-center">
+        {
+          mainMenu.map((item) => (
+            <>
+              {item.hasChildren ? (
+                <div class="relative dropdown">
+                  <Link href={item.url || "#"}
+                        class={`${item.url ? "" : "pointer-events-none "} flex items-center text-gray-500 hover:text-blue-600 dark:text-gray-400 dark:hover:text-blue-400 px-3 py-2 rounded-md text-sm font-medium dropdown-toggle`}
+                        aria-expanded="false"
+                        aria-haspopup="true"
+                  >
+                    {item.name}
+                    <svg xmlns="http://www.w3.org/2000/svg" class="ml-1 h-4 w-4 transition-transform duration-200 dropdown-icon" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" /></svg>
+                  </Link>
+                  <div class="absolute left-0 mt-2 w-48 rounded-md shadow-lg bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 dropdown-menu opacity-0 invisible transform translate-y-2 transition-all duration-300 z-10">
+                    <div class="py-1 rounded-md">
+                      {item.children.map((child) => (
+                        <Link href={child.url}
+                              class="block px-4 py-2 text-sm text-gray-500 hover:text-blue-600 dark:text-gray-400 dark:hover:text-blue-400 hover:bg-gray-100 dark:hover:bg-gray-700"
+                        >
+                          {child.name}
+                        </Link>
+                      ))}
+                    </div>
+                  </div>
+                </div>
+              ) : (
+                <Link href={item.url}
+                      class="text-gray-500 hover:text-blue-600 dark:text-gray-400 dark:hover:text-blue-400 px-3 py-2 rounded-md text-sm font-medium"
+                >
+                  {item.name}
+                </Link>
+              )}
+            </>
+          ))
+        }
+        <!-- Search Icon -->
+        <Link href="/search" class="text-gray-500 hover:text-blue-600 dark:text-gray-400 dark:hover:text-blue-400 p-2 rounded-md transition-colors duration-200" aria-label="Search">
+          <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+          </svg>
+        </Link>
+        <ThemeToggle id="themeToggle-desktop" />
+      </nav>
+    </div>
+  </div>
+
+  <!-- Mobile menu, show/hide based on menu state -->
+  <div class="hidden md:hidden" id="mobile-menu">
+    <div class="px-2 pt-2 pb-3 space-y-1 bg-white dark:bg-gray-900 border-t border-gray-200 dark:border-gray-700">
+      {
+        mainMenu.map((item) => (
+          <>
+            {item.hasChildren ? (
+              <div class="mobile-dropdown">
+                <button class="mobile-dropdown-button w-full text-left flex justify-between items-center text-gray-500 hover:text-blue-600 dark:text-gray-400 dark:hover:text-blue-400 px-3 py-2 rounded-md text-base font-medium" type="button">
+                  {item.name}
+                  <svg
+                    xmlns="http://www.w3.org/2000/svg"
+                    class="mobile-dropdown-icon h-4 w-4 transition-transform duration-200"
+                    fill="none"
+                    viewBox="0 0 24 24"
+                    stroke="currentColor"
+                  >
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
+                  </svg>
+                </button>
+                <div class="mobile-dropdown-content hidden pl-4 py-2 space-y-1 transition-all duration-300">
+                  {item.children.map((child) => (
+                    <Link href={child.url}
+                      class="block px-3 py-2 rounded-md text-base font-medium text-gray-500 hover:text-blue-600 dark:text-gray-400 dark:hover:text-blue-400 hover:bg-gray-100 dark:hover:bg-gray-700"
+                    >
+                      {child.name}
+                    </Link>
+                  ))}
+                </div>
+              </div>
+            ) : (
+              <Link href={item.url}
+                class="block px-3 py-2 rounded-md text-base font-medium text-gray-500 hover:text-blue-600 dark:text-gray-400 dark:hover:text-blue-400"
+              >
+                {item.name}
+              </Link>
+            )}
+          </>
+        ))
+      }
+      <div class="px-3 py-3 flex justify-center gap-4">
+        <!-- Search Icon (Mobile) -->
+        <Link href="/search" class="text-gray-500 hover:text-blue-600 dark:text-gray-400 dark:hover:text-blue-400 p-2 rounded-md transition-colors duration-200" aria-label="Search">
+          <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+          </svg>
+        </Link>
+        <ThemeToggle id="themeToggle-mobile" />
+      </div>
+    </div>
+  </div>
+</header>
+
+<style>
+  /* 电脑端悬停效果 - 只在支持悬停的设备上生效 */
+  @media (hover: hover) and (pointer: fine) {
+    .dropdown:hover .dropdown-menu {
+      opacity: 1;
+      visibility: visible;
+      transform: translateY(0);
+    }
+    
+    .dropdown:hover .dropdown-icon {
+      transform: rotate(180deg);
+    }
+  }
+  
+  /* 触摸设备上禁用悬停效果 */
+  @media (hover: none) {
+    .dropdown:hover .dropdown-menu {
+      opacity: 0;
+      visibility: hidden;
+      transform: translateY(0.5rem);
+    }
+  }
+  
+  /* 移动端下拉菜单激活状态 */
+  .mobile-dropdown-content.mobile-active {
+    display: block !important;
+  }
+  
+  .mobile-dropdown-icon.mobile-active {
+    transform: rotate(180deg);
+  }
+</style>
+
+<script>
+  // Mobile menu toggle
+  const mobileMenuButton = document.getElementById('mobile-menu-button');
+  const mobileMenu = document.getElementById('mobile-menu');
+  const menuClosedIcon = document.getElementById('menu-closed-icon');
+  const menuOpenIcon = document.getElementById('menu-open-icon');
+
+  if (mobileMenuButton && mobileMenu && menuClosedIcon && menuOpenIcon) {
+    mobileMenuButton.addEventListener('click', () => {
+      const expanded = mobileMenuButton.getAttribute('aria-expanded') === 'true';
+      mobileMenuButton.setAttribute('aria-expanded', `${!expanded}`);
+      mobileMenu.classList.toggle('hidden');
+      menuClosedIcon.classList.toggle('hidden');
+      menuOpenIcon.classList.toggle('hidden');
+    });
+  }
+
+  // 检测设备是否支持悬停
+  const supportsHover = window.matchMedia("(hover: hover) and (pointer: fine)").matches;
+  
+  // 移动端下拉菜单处理
+  const mobileDropdownButtons = document.querySelectorAll('.mobile-dropdown-button');
+  
+  mobileDropdownButtons.forEach(button => {
+    button.addEventListener('click', (e) => {
+      e.stopPropagation();
+      const content = button.nextElementSibling;
+      const icon = button.querySelector('.mobile-dropdown-icon');
+      
+      // 关闭其他所有下拉菜单
+      mobileDropdownButtons.forEach(otherButton => {
+        if (otherButton !== button) {
+          const otherContent = otherButton.nextElementSibling;
+          const otherIcon = otherButton.querySelector('.mobile-dropdown-icon');
+          if (otherContent) {
+            otherContent.classList.add('hidden');
+            otherContent.classList.remove('mobile-active');
+          }
+          if (otherIcon) {
+            otherIcon.classList.remove('mobile-active');
+          }
+        }
+      });
+      
+      // 切换当前下拉菜单
+      if (content) {
+        content.classList.toggle('hidden');
+        content.classList.toggle('mobile-active');
+      }
+      if (icon) {
+        icon.classList.toggle('mobile-active');
+      }
+    });
+  });
+
+  // 桌面端下拉菜单处理（仅在不支持悬停的设备上，如触摸屏笔记本）
+  if (!supportsHover) {
+    const desktopDropdowns = document.querySelectorAll('.dropdown');
+    
+    desktopDropdowns.forEach(dropdown => {
+      const toggle = dropdown.querySelector('.dropdown-toggle');
+      const menu = dropdown.querySelector('.dropdown-menu');
+      const icon = dropdown.querySelector('.dropdown-icon');
+      
+      if (!toggle || !menu) return;
+      
+      toggle.addEventListener('click', (e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        
+        // 关闭其他所有下拉菜单
+        desktopDropdowns.forEach(otherDropdown => {
+          if (otherDropdown !== dropdown) {
+            const otherMenu = otherDropdown.querySelector('.dropdown-menu');
+            const otherIcon = otherDropdown.querySelector('.dropdown-icon');
+            if (otherMenu) {
+              otherMenu.style.opacity = '0';
+              otherMenu.style.visibility = 'hidden';
+              otherMenu.style.transform = 'translateY(0.5rem)';
+            }
+            if (otherIcon) {
+              otherIcon.style.transform = 'rotate(0deg)';
+            }
+          }
+        });
+        
+        // 切换当前下拉菜单
+        const isVisible = menu.style.opacity === '1';
+        if (isVisible) {
+          menu.style.opacity = '0';
+          menu.style.visibility = 'hidden';
+          menu.style.transform = 'translateY(0.5rem)';
+          if (icon) icon.style.transform = 'rotate(0deg)';
+        } else {
+          menu.style.opacity = '1';
+          menu.style.visibility = 'visible';
+          menu.style.transform = 'translateY(0)';
+          if (icon) icon.style.transform = 'rotate(180deg)';
+        }
+      });
+    });
+  }
+  
+  // 点击外部区域关闭所有下拉菜单
+  document.addEventListener('click', (e) => {
+    const target = e.target as Element;
+    
+    // 关闭移动端下拉菜单
+    if (!target.closest('.mobile-dropdown')) {
+      mobileDropdownButtons.forEach(button => {
+        const content = button.nextElementSibling;
+        const icon = button.querySelector('.mobile-dropdown-icon');
+        if (content) {
+          content.classList.add('hidden');
+          content.classList.remove('mobile-active');
+        }
+        if (icon) {
+          icon.classList.remove('mobile-active');
+        }
+      });
+    }
+    
+    // 关闭桌面端下拉菜单（仅在不支持悬停的设备上）
+    if (!supportsHover && !target.closest('.dropdown')) {
+      const desktopDropdowns = document.querySelectorAll('.dropdown');
+      desktopDropdowns.forEach(dropdown => {
+        const menu = dropdown.querySelector('.dropdown-menu');
+        const icon = dropdown.querySelector('.dropdown-icon');
+        if (menu) {
+          menu.style.opacity = '0';
+          menu.style.visibility = 'hidden';
+          menu.style.transform = 'translateY(0.5rem)';
+        }
+        if (icon) {
+          icon.style.transform = 'rotate(0deg)';
+        }
+      });
+    }
+  });
+  
+  // 防止下拉菜单内部点击时关闭菜单
+  document.querySelectorAll('.dropdown-menu, .mobile-dropdown-content').forEach(menu => {
+    menu.addEventListener('click', (e) => {
+      e.stopPropagation();
+    });
+  });
+</script>

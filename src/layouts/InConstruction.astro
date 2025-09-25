@@ -1,0 +1,60 @@
+---
+import { Icon } from 'astro-icon/components';
+import Link from "@components/common/Link.astro";
+
+export interface Props {
+  title?: string;
+  description?: string;
+  pageTitle?: string;
+  message?: string;
+  showBackButton?: boolean;
+  backUrl?: string;
+  backText?: string;
+}
+
+const {
+  title = "Under Construction",
+  description = "This page is currently under construction.",
+  pageTitle = "Under Construction",
+  message = "We're working hard to bring you something amazing. Please check back soon!",
+  showBackButton = true,
+  backUrl = "/",
+  backText = "Home"
+} = Astro.props;
+---
+
+<div class="w-full py-16 flex flex-col items-center justify-center text-center px-4">
+    <div class="max-w-md">
+        <Icon name="mdi:hammer-wrench" class="w-24 h-24 text-orange-500 dark:text-orange-400 mx-auto mb-6" />
+
+        <h1 class="text-4xl md:text-5xl font-bold text-gray-900 dark:text-white mb-4">
+          {pageTitle}
+        </h1>
+
+        <h2 class="text-2xl md:text-3xl font-semibold text-gray-800 dark:text-gray-200 mb-6">
+            Coming Soon
+        </h2>
+
+        <p class="text-lg text-gray-600 dark:text-gray-400 mb-8">
+            {message}
+        </p>
+
+        <div class="flex flex-col sm:flex-row gap-4 justify-center">
+            {showBackButton && (
+                <Link href={backUrl}
+                      class="px-6 py-3 bg-orange-500 hover:bg-orange-600 text-white rounded-md transition-colors duration-300 flex items-center justify-center"
+                >
+                    <Icon name="mdi:arrow-left" class="w-5 h-5 mr-2" />
+                    {backText}
+                </Link>
+            )}
+
+            <Link href="/blog"
+                  class="px-6 py-3 bg-gray-200 dark:bg-gray-700 hover:bg-gray-300 dark:hover:bg-gray-600 text-gray-800 dark:text-gray-200 rounded-md transition-colors duration-300 flex items-center justify-center"
+            >
+                <Icon name="mdi:book-open" class="w-5 h-5 mr-2" />
+                Browse Blog
+            </Link>
+        </div>
+    </div>
+</div>

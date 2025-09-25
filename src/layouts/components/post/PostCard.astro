@@ -1,0 +1,112 @@
+---
+import { Image } from 'astro:assets';
+import { Icon } from 'astro-icon/components';
+import { formatDate } from '@utils/dateUtils';
+import SeriesBadge from './SeriesBadge.astro';
+import Link from "../common/Link.astro";
+import type {CollectionEntry} from "astro:content";
+
+interface Props {
+  post: CollectionEntry<"posts">;
+  withImage?: boolean;
+}
+
+const { post, withImage=true } = Astro.props;
+const {
+  title,
+  description,
+  image,
+  publishTime,
+  categories,
+  authors,
+  series
+} = post.data;
+
+// Extract the slug from the canonical URL or use the file name
+let slug = post.data?.canonical
+  ? new URL(post.data.canonical).pathname.split('/').filter(Boolean).pop() as string
+  : post.id;
+if (slug.startsWith('/')) {
+  slug = slug.slice(1);
+  console.warn(`Warning: Post slug "${slug}" should not start with a leading slash. It has been removed.`);
+}
+
+// Check if post is part of a series
+const isPartOfSeries = series && Array.isArray(series) && series.length === 2;
+---
+
+<article class="bg-white dark:bg-gray-800 rounded-lg shadow-md overflow-hidden transition-transform duration-400 hover:transform hover:scale-[1.02]" >
+  <!-- Post Image -->
+  {withImage && image && (
+    <Link href={`/posts/${slug}`} class="block overflow-hidden aspect-video">
+      <Image
+        src={image}
+        alt={title}
+        class="w-full h-full object-cover transition-transform duration-400hover:scale-105"
+        width={640}
+        height={360}
+      />
+    </Link>
+  )}
+
+  <div class="p-5 h-full flex flex-col justify-between">
+    <div class="card-head">
+      <div class="flex flex-wrap gap-2 mb-2 items-center justify-between">
+        <!-- Categories -->
+        {categories && categories.length > 0 && (
+          <div class="flex flex-wrap gap-2">
+            {categories.map((category: string) => (
+              <Link href={`/categories/${category.toLowerCase()}`}
+                    class="text-xs font-medium px-2 py-1 bg-blue-100 dark:bg-blue-900 text-blue-700 dark:text-blue-300 rounded-full hover:bg-blue-200 dark:hover:bg-blue-800 transition-colors"
+              >
+                {category}
+              </Link>
+            ))}
+          </div>
+        )}
+
+        <!-- Series Badge (if part of a series) -->
+        {isPartOfSeries && (
+          <SeriesBadge seriesName={series[0]}
+                       seriesPosition={series[1]}
+                       size="sm"
+          />
+        )}
+      </div>
+
+      <!-- Title -->
+    <h2 class="text-xl font-bold mb-2 text-gray-900 dark:text-white line-clamp-2">
+      <Link href={`/posts/${slug}`} class="hover:text-blue-600 dark:hover:text-blue-400 transition-colors">
+        {title}
+      </Link>
+    </h2>
+
+      <!-- Description -->
+      {description && (
+        <p class="text-gray-600 dark:text-gray-300 mb-4 line-clamp-3">
+          {description}
+        </p>
+      )}
+    </div>
+
+    <div class="flex items-center justify-between mt-4 text-sm text-gray-500 dark:text-gray-400">
+      <!-- Author -->
+      {authors && authors.length > 0 && (
+        <div class="flex items-center">
+          <Icon name="mdi:account" class="w-4 h-4 mr-1" />
+          <span>{authors[0]}</span>
+        </div>
+      )}
+
+      <!-- Date -->
+      {publishTime && (
+        <div class="flex items-center">
+          <Icon name="mdi:calendar" class="w-4 h-4 mr-1" />
+          <time datetime={publishTime.toISOString()}>
+            {formatDate(publishTime)}
+          </time>
+        </div>
+      )}
+    </div>
+  </div>
+</article>

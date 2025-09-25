@@ -1,0 +1,102 @@
+---
+import type { Heading } from "@utils/toc";
+
+interface Props {
+  heading: Heading;
+  type: 'mobile' | 'desktop';
+  depth?: number;
+}
+
+const { heading, type, depth = 1 } = Astro.props;
+
+// 根据深度计算样式
+const getItemClasses = (currentDepth: number, itemType: string) => {
+  const baseClasses = `${itemType}-toc-link block rounded transition-all duration-200 border-l-2 border-transparent relative`;
+  
+  let depthClasses = '';
+  let textClasses = '';
+  let spacingClasses = '';
+  
+  if (itemType === 'mobile') {
+    // 移动端样式
+    spacingClasses = currentDepth === 1 ? 'py-2 px-4' : 'py-1.5 px-4';
+    textClasses = currentDepth === 1 ? 'text-base font-medium' : currentDepth === 2 ? 'text-sm' : 'text-xs';
+    depthClasses = currentDepth > 1 ? `ml-${Math.min((currentDepth - 1) * 4, 8)}` : '';
+  } else {
+    // 桌面端样式
+    // spacingClasses = currentDepth === 1 ? 'py-2 px-3' : 'py-1.5 px-3';
+    // textClasses = currentDepth === 1 ? 'text-sm font-medium' : currentDepth === 2 ? 'text-sm' : 'text-xs';
+    spacingClasses = 'py-1 px-3';
+    textClasses = 'text-sm font-medium';
+    depthClasses = currentDepth > 1 ? `ml-${Math.min((currentDepth - 1) * 3, 6)}` : '';
+  }
+  
+  const textColor = currentDepth === 1
+    ? 'text-gray-700 dark:text-gray-300'
+    : 'text-gray-600 dark:text-gray-400';
+  const hoverColor = 'hover:text-blue-600 dark:hover:text-blue-400 hover:bg-gray-50 dark:hover:bg-gray-700/50';
+
+  return `${baseClasses} ${depthClasses} ${spacingClasses} ${textClasses} ${textColor} ${hoverColor}`;
+};
+
+const getListClasses = (currentDepth: number, itemType: string) => {
+  if (itemType === 'mobile') {
+    return currentDepth > 1 ? 'space-y-0.5' : 'space-y-1';
+  } else {
+    // return currentDepth > 1 ? 'space-y-0.5 mt-1' : 'space-y-1';
+    return 'space-y-1'
+  }
+};
+---
+
+<li class="relative">
+    <a href={`#${heading.slug}`}
+       class={getItemClasses(depth, type)}
+       data-target={heading.slug}
+       data-title={heading.text}
+    >
+        <span class="block truncate pr-2">{heading.text}</span>
+        <!-- 活跃状态指示器 -->
+        <div class="absolute left-0 top-0 bottom-0 w-0.5 bg-blue-600 dark:bg-blue-400 opacity-0 transition-opacity duration-200"></div>
+    </a>
+    {heading.subheadings.length > 0 && (
+        <ul class={getListClasses(depth + 1, type)}>
+            {heading.subheadings.map((subheading) => (
+                <Astro.self heading={subheading} type={type} depth={depth + 1} />
+            ))}
+        </ul>
+    )}
+</li>
+
+<style>
+/* 活跃状态样式 */
+.mobile-toc-link.text-blue-600 .absolute,
+.desktop-toc-link.text-blue-600 .absolute {
+    opacity: 1;
+}
+
+/* 移动端特殊样式 */
+.mobile-toc-link {
+    border-bottom: 1px solid rgba(229, 231, 235, 0.5);
+}
+
+.mobile-toc-link:last-child {
+    border-bottom: none;
+}
+
+.dark .mobile-toc-link {
+    border-bottom-color: rgba(75, 85, 99, 0.5);
+}
+
+/* 桌面端悬停效果 */
+.desktop-toc-link:hover .absolute {
+    opacity: 0.3;
+}
+
+/* 确保文本不会因为指示器被遮挡 */
+.mobile-toc-link span,
+.desktop-toc-link span {
+    position: relative;
+    z-index: 1;
+}
+</style>

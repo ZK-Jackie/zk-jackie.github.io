@@ -1,0 +1,13 @@
+---
+import {getRoutePath} from "@utils/route";
+interface LinkProps extends astroHTML.JSX.AnchorHTMLAttributes {
+    href: string;
+}
+const {href, class: className, ...props} = Astro.props as LinkProps;
+---
+<a href={getRoutePath(href)}
+   class={className}
+   {...props}
+>
+    <slot/>
+</a>

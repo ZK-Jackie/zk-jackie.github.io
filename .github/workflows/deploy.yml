@@ -1,0 +1,116 @@
+name: Deploy to GitHub Pages and production server
+
+on:
+  push:
+    branches: [ master ]
+  workflow_dispatch:
+
+permissions:
+  contents: read      # 允许读取仓库内容（代码、文件等）
+  pages: write        # 允许写入 GitHub Pages（部署静态网站）
+  id-token: write     # 允许创建 OIDC 身份令牌（用于安全认证）
+
+jobs:
+  build:
+    name: Build Astro Site
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+          cache: "npm"
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Build site for GitHub Pages
+        run: npm run build:gh
+
+      # 上传文件夹时的 path，末尾有无 “/” 效果一致；actions/upload-pages-artifact 在普通的 upload 基础上多了一步打包
+      - name: Upload Pages Artifact
+        uses: actions/upload-pages-artifact@v4
+        with:
+          path: "./dist/"
+
+      - name: Create env file for Production
+        run: |
+          echo ${{ secrets.ENV_PRODUCTION }} > .env.production
+
+      - name: Build site for Production
+        run: npm run build:prod
+
+      - name: Upload Production Artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: prod-pages
+          path: './dist'
+
+  deploy-gh:
+    name: Deploy to GitHub Pages
+    needs: build
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      # https://github.com/actions/deploy-pages/blob/main/action.yml
+      # 默认下载名为 github-pages 的 artifact 并部署到 GitHub Pages
+      - name: Deploy to GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v4
+
+  deploy-production:
+    name: Deploy to Production Server
+    needs: build
+    runs-on: ubuntu-latest
+    environment:
+      name: production
+    env:
+      PROD_HOST: ${{ secrets.PROD_HOST }}
+      PROD_PRIVATE_KEY: ${{ secrets.PROD_PRIVATE_KEY }}
+      PROD_USERNAME: ${{ secrets.PROD_USERNAME }}
+    steps:
+      - name: Check environment
+        run: |
+          echo "Deploying to production server at $PROD_HOST with user $PROD_USERNAME"
+          if [ -z "$PROD_HOST" ] || [ -z "$PROD_PRIVATE_KEY" ] || [ -z "$PROD_USERNAME" ]; then
+            echo "One or more required secrets are missing. Exiting."
+            exit 1
+          fi
+      # https://github.com/actions/download-artifact?tab=readme-ov-file#v5---whats-new
+      # 下载名为 github-pages 的 artifact，下载入 dist/ 中
+      - name: Download artifact
+        uses: actions/download-artifact@v5
+        with:
+          name: prod-pages
+          path: "dist"
+
+      # https://github.com/easingthemes/ssh-deploy
+      - name: Deploy to Production Server
+        uses: easingthemes/ssh-deploy@main
+        with:
+          SSH_PRIVATE_KEY: ${{ secrets.PROD_PRIVATE_KEY }}
+          ARGS: "-rlgoDzvc -i --delete"
+          SOURCE: "dist/"
+          REMOTE_HOST: ${{ secrets.PROD_HOST }}
+          REMOTE_USER: ${{ secrets.PROD_USERNAME }}
+          TARGET: ${{ vars.PROD_TARGET || '/var/www/html/' }}
+          SCRIPT_BEFORE: |
+            mkdir -p ${{ vars.PROD_TARGET || '/var/www/html/' }}
+          SCRIPT_AFTER_REQUIRED: true
+          SCRIPT_AFTER: |
+            if command -v nginx > /dev/null 2>&1; then
+              nginx -t && nginx -s reload
+            fi
+        timeout-minutes: 10
+
+      - name: Remove artifact
+        uses: geekyeggo/delete-artifact@v5
+        with:
+          name: prod-pages

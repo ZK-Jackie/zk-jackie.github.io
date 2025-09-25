@@ -1,0 +1,144 @@
+---
+// File: 'FileTree.astro'
+import { processFileTree } from './rehype-file-tree';
+
+interface Props {
+  dirLabel?: string; // 用于“目录”文案的可选覆盖
+}
+
+const fileTreeHtml = await Astro.slots.render('default');
+const { dirLabel = '目录' } = Astro.props as Props;
+const html = processFileTree(fileTreeHtml, dirLabel);
+---
+
+<div class="not-prose">
+    <div class="widget-filetree" set:html={html} data-pagefind-ignore />
+</div>
+
+
+<style>
+    .widget-filetree {
+        --x-space: 1.5rem;
+        --y-space: 0.125rem;
+        --y-pad: 0;
+
+        display: block;
+        border: 1px solid var(--color-border-base);
+        padding: 1rem;
+        background-color: var(--color-bg-muted);
+        font-size: 0.75rem; /* 原 sl-text-xs */
+        font-family: var(--font-mono),serif; /* 原 __sl-font-mono */
+        overflow-x: auto;
+    }
+
+    .widget-filetree :global(.directory > details) {
+        border: 0;
+        padding: 0;
+        padding-inline-start: var(--x-space);
+        background: transparent;
+    }
+
+    .widget-filetree :global(.directory > details > summary) {
+        margin-inline-start: calc(-1 * var(--x-space));
+        border: 0;
+        padding: var(--y-pad) 0.625rem;
+        font-weight: normal;
+        color: var(--color-text-base);
+        max-width: 100%;
+    }
+
+    .widget-filetree :global(.directory > details > summary::marker),
+    .widget-filetree :global(.directory > details > summary::-webkit-details-marker) {
+        color: var(--color-text-subtle);
+    }
+
+    .widget-filetree :global(.directory > details > summary:hover),
+    .widget-filetree :global(.directory > details > summary:hover .tree-icon) {
+        cursor: pointer;
+        color: var(--color-blue-600); /* 原 sl-color-text-accent */
+        fill: currentColor;
+    }
+
+    .widget-filetree :global(.directory > details > summary:hover ~ ul) {
+        border-color: var(--color-border-base);
+    }
+
+    .widget-filetree :global(.directory > details > summary:hover .highlight .tree-icon) {
+        color: var(--color-bg-base); /* 原 sl-color-text-invert */
+        fill: currentColor;
+    }
+
+    .widget-filetree :global(ul) {
+        margin-inline-start: 0.5rem;
+        border-inline-start: 1px solid var(--color-border-base);
+        padding: 0;
+        padding-inline-start: 0.125rem;
+        list-style: none;
+    }
+
+    .widget-filetree > :global(ul) {
+        margin: 0;
+        border: 0;
+        padding: 0;
+    }
+
+    .widget-filetree :global(li) {
+        margin: var(--y-space) 0;
+        padding: var(--y-pad) 0;
+    }
+
+    .widget-filetree :global(.file) {
+        margin-inline-start: calc(var(--x-space) - 0.125rem);
+        color: var(--color-text-base);
+    }
+
+    .widget-filetree :global(.tree-entry) {
+        display: inline-flex;
+        align-items: flex-start;
+        flex-wrap: wrap;
+        max-width: calc(100% - 1rem);
+    }
+
+    @media (min-width: 30em) {
+        .widget-filetree :global(.tree-entry) {
+            flex-wrap: nowrap;
+        }
+    }
+
+    .widget-filetree :global(.tree-entry > :first-child) {
+        flex-shrink: 0;
+    }
+
+    .widget-filetree :global(.empty) {
+        color: var(--color-text-subtle);
+        padding-inline-start: 0.375rem;
+    }
+
+    .widget-filetree :global(.comment) {
+        color: var(--color-text-subtle);
+        padding-inline-start: 1.625rem;
+        max-width: 24rem;
+        min-width: 12rem;
+    }
+
+    .widget-filetree :global(.highlight) {
+        display: inline-block;
+        border-radius: 0.25rem;
+        padding-inline-end: 0.5rem;
+        color: var(--color-bg-base); /* 文字反相 */
+        background-color: var(--color-blue-600); /* 强调色背景 */
+    }
+
+    .widget-filetree :global(svg) {
+        display: inline;
+        fill: var(--color-text-subtle);
+        vertical-align: middle;
+        margin-inline: 0.25rem 0.375rem;
+        width: 0.875rem;
+        height: 0.875rem;
+    }
+
+    .widget-filetree :global(.highlight svg.tree-icon) {
+        fill: currentColor;
+    }
+</style>

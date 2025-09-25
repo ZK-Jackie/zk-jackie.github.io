@@ -1,0 +1,170 @@
+---
+title: "Example Document"
+description: "An example document using all components in a single file."
+slug: "example-document"
+draft: true
+---
+
+### File Tree
+
+- code
+
+```html
+<FileTree>
+- src
+  - components
+    - Button.js
+    - Card.js
+  - pages
+    - index.js
+    - about.js
+- public
+</FileTree>
+```
+
+- example
+
+<FileTree>
+  - src
+    - components
+      - Button.js
+      - Card.js
+    - pages
+      - index.js
+      - about.js
+  - public
+    - ...
+</FileTree>
+
+
+### Notice
+
+- code
+
+```html
+<Notice type="info" title="Definition">
+  This is an informational notice.
+</Notice>
+
+<Notice type="warning" title="Caution">
+  This is a warning notice.
+</Notice>
+
+<Notice type="error" title="Error">
+  This is an error notice.
+</Notice>
+
+<Notice type="success" title="Success">
+  This is a success notice.
+</Notice>
+```
+
+- example
+
+<Notice type="info" title="Definition">
+  This is an informational notice.
+</Notice>
+
+<Notice type="warning" title="Caution">
+  This is a warning notice.
+</Notice>
+
+<Notice type="error" title="Error">
+  This is an error notice.
+</Notice>
+
+<Notice type="success" title="Success">
+  This is a success notice.
+</Notice>
+
+
+### Tabs
+
+- code
+
+```html
+<Tabs>
+  <Tab name="Tab 1">Content of `Tab 1`</Tab>
+  <Tab name="Tab 2">Content of **Tab 2**</Tab>
+  <Tab name="Tab 3">Content of *Tab 3*</Tab>
+</Tabs>
+```
+
+- example
+
+<Tabs>
+  <Tab name="Tab 1">Content of `Tab 1`</Tab>
+  <Tab name="Tab 2">Content of **Tab 2**</Tab>
+  <Tab name="Tab 3">Content of *Tab 3*</Tab>
+</Tabs>
+
+
+### List Check
+
+- code
+
+```html
+<ListCheck>
+- Item 1
+- Item 2
+- Item 3
+</ListCheck>
+```
+
+- example
+
+<ListCheck>
+- Item 1
+- Item 2
+- Item 3
+</ListCheck>
+
+
+### Accordion
+
+- code
+
+```html
+<Accordion label="Example Accordion1" group="example-accordion">
+  Labeled `Example Accordion1` and grouped under `example-accordion`.
+</Accordion>
+<Accordion label="Example Accordion2" group="example-accordion">
+  Labeled `Example Accordion2` and grouped under `example-accordion`.
+</Accordion>
+<Accordion label="Example Accordion2" group="a-accordion">
+  Another group under `a-accordion`.
+</Accordion>
+```
+
+- example
+
+<Accordion label="Example Accordion1" group="example-accordion">
+  Labeled `Example Accordion1` and grouped under `example-accordion`.
+
+  Test line break.
+
+  Test a link [Google](https://www.google.com).
+</Accordion>
+<Accordion label="Example Accordion2" group="example-accordion">
+  - Labeled `Example Accordion2` and grouped under `example-accordion`.
+  - This is a list item.
+  - Another list item with **bold text** and *italic text*.
+</Accordion>
+<Accordion label="Example Accordion2" group="a-accordion">
+  Another group under `a-accordion`.
+</Accordion>
+
+
+### Button
+
+- code
+
+```html
+<Button text="primary" color="blue">Primary Button</Button>
+<Button text="secondary" color="blue">Secondary Button</Button>
+```
+
+- example
+
+<Button text="primary" color="blue">Primary Button</Button>
+<Button text="secondary" color="blue">Secondary Button</Button>

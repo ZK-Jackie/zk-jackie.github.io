@@ -1,0 +1,29 @@
+---
+import Hero from '@layouts/components/widgets/Hero.astro';
+import Layout from '@layouts/Layout.astro';
+import PopularTopics from '@components/post/PopularTopics.astro';
+import { siteConfig } from '@config';
+import BrowserCategories from "@layouts/components/homepage/BrowserCategories.astro";
+import RecentPosts from "@components/homepage/RecentPosts.astro";
+---
+
+<Layout
+  title={siteConfig.title}
+  withSiteName={false}
+  description={siteConfig.description}
+  wideContent={true}
+>
+  <main class="w-full py-8">
+    <!-- Hero Section -->
+    <Hero />
+
+    <!-- Blog Posts Section -->
+    <RecentPosts />
+
+    <!-- Browse Categories Section -->
+    <!--<BrowserCategories />-->
+
+    <!-- Popular Topics Section -->
+    <!--<PopularTopics tags={["Jamstack", "astro", "ai"]} postsPerTag={5} />-->
+  </main>
+</Layout>

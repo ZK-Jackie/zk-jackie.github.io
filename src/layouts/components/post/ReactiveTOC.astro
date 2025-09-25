@@ -1,0 +1,384 @@
+---
+import type { MarkdownHeading } from "astro";
+import type { Heading } from "@utils/toc";
+import {buildToc} from "@utils/toc";
+import ReactiveHeading from "./table-of-contents/ReactiveHeading.astro";
+
+interface Props {
+  headings: MarkdownHeading[];
+}
+
+const { headings } = Astro.props;
+const tableOfContents: Heading[] = buildToc(headings);
+---
+
+<!-- 移动端顶部目录 - 一直显示，位于导航栏下方 -->
+<div class="lg:hidden sticky top-16 left-0 w-full z-40 bg-white/95 dark:bg-gray-800/95 backdrop-blur-md shadow-lg border-b border-gray-200 dark:border-gray-700" id="mobile-toc">
+    <div class="px-4 py-3">
+        <div class="flex items-center justify-between">
+            <!-- 左侧：目录下拉按钮 -->
+            <button id="mobile-toc-toggle" class="flex items-center gap-2 text-left hover:bg-gray-100 dark:hover:bg-gray-700 rounded-md px-2 py-1 transition-colors">
+                <svg class="w-5 h-5 transform transition-transform duration-200" fill="currentColor" viewBox="0 0 20 20">
+                    <path fill-rule="evenodd" d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z" clip-rule="evenodd" />
+                </svg>
+                <span class="text-sm font-medium text-gray-700 dark:text-gray-300">目录</span>
+            </button>
+            
+            <!-- 右侧：当前位置指示器 -->
+            <div class="flex-1 flex justify-end">
+                <div id="mobile-current-heading" class="text-sm text-gray-500 dark:text-gray-400 truncate max-w-48 text-right">
+                    <!-- 当前标题将在这里显示 -->
+                </div>
+            </div>
+        </div>
+        
+        <!-- 下拉目录内容 -->
+        <div id="mobile-toc-content" class="hidden mt-3 max-h-64 overflow-y-auto bg-white dark:bg-gray-800 rounded-md border border-gray-200 dark:border-gray-700 shadow-lg">
+            <ul class="py-2">
+                {tableOfContents.map((heading) => (
+                  <ReactiveHeading heading={heading} type="mobile" />
+                ))}
+            </ul>
+        </div>
+    </div>
+</div>
+
+<!-- 桌面端右侧悬浮目录 -->
+<div class="hidden lg:block fixed top-20 right-6 z-30 w-64 max-h-96 overflow-y-auto bg-white/95 dark:bg-gray-800/95 backdrop-blur-md rounded-lg shadow-lg border border-gray-200 dark:border-gray-700 p-4" id="desktop-toc">
+    <h3 class="text-lg font-semibold text-gray-800 dark:text-gray-200 mb-3">目录</h3>
+    <ul class="space-y-1">
+        {tableOfContents.map((heading) => (
+          <ReactiveHeading heading={heading} type="desktop" />
+        ))}
+    </ul>
+</div>
+
+<style>
+/* 自定义滚动条样式 */
+#desktop-toc, #mobile-toc-content {
+    scrollbar-width: thin;
+    scrollbar-color: rgba(156, 163, 175, 0.5) transparent;
+}
+
+#desktop-toc::-webkit-scrollbar,
+#mobile-toc-content::-webkit-scrollbar {
+    width: 6px;
+}
+
+#desktop-toc::-webkit-scrollbar-track,
+#mobile-toc-content::-webkit-scrollbar-track {
+    background: transparent;
+}
+
+#desktop-toc::-webkit-scrollbar-thumb,
+#mobile-toc-content::-webkit-scrollbar-thumb {
+    background-color: rgba(156, 163, 175, 0.5);
+    border-radius: 20px;
+}
+
+.dark #desktop-toc::-webkit-scrollbar-thumb,
+.dark #mobile-toc-content::-webkit-scrollbar-thumb {
+    background-color: rgba(209, 213, 219, 0.5);
+}
+
+/* 平滑过渡效果 */
+#desktop-toc {
+    transition: all 0.3s ease;
+}
+
+#desktop-toc.toc-hidden {
+    opacity: 0;
+    transform: translateX(20px);
+    pointer-events: none;
+}
+</style>
+
+<script>
+document.addEventListener('DOMContentLoaded', () => {
+    // 元素引用
+    const mobileToggle = document.getElementById('mobile-toc-toggle');
+    const mobileContent = document.getElementById('mobile-toc-content');
+    const mobileCurrentHeading = document.getElementById('mobile-current-heading');
+    const mobileToc = document.getElementById('mobile-toc');
+    const desktopToc = document.getElementById('desktop-toc');
+
+    // 获取所有目录链接和对应的标题元素
+    const tocLinks = document.querySelectorAll('.desktop-toc-link, .mobile-toc-link');
+    const headingElements: HTMLElement[] = [];
+    
+    // 收集页面中的所有标题元素
+    tocLinks.forEach(link => {
+        const targetId = link.getAttribute('data-target');
+        if (targetId) {
+            const element = document.getElementById(targetId);
+            if (element && !headingElements.includes(element)) {
+                headingElements.push(element);
+            }
+        }
+    });
+
+    // 当前活跃的标题
+    let currentActiveHeading: string | null = null;
+    
+    // 初始化桌面端目录可见性
+    updateDesktopTocVisibility();
+
+    // 移动端下拉切换
+    if (mobileToggle && mobileContent) {
+        mobileToggle.addEventListener('click', () => {
+            const isExpanded = !mobileContent.classList.contains('hidden');
+            
+            if (isExpanded) {
+                mobileContent.classList.add('hidden');
+            } else {
+                mobileContent.classList.remove('hidden');
+                // 展开时自动滚动到当前活跃项
+                scrollToActiveItemInTOC('mobile');
+            }
+            
+            // 更新箭头方向
+            const svg = mobileToggle.querySelector('svg');
+            if (svg) {
+                svg.classList.toggle('rotate-180', !isExpanded);
+            }
+        });
+    }
+
+    // 检测是否应该显示桌面端目录
+    function shouldShowDesktopTOC(): boolean {
+        if (headingElements.length === 0) return false;
+        
+        const firstHeading = headingElements[0];
+        const scrollY = window.scrollY;
+        const headingTop = firstHeading.offsetTop;
+        const offset = 80;
+        
+        return scrollY + offset >= headingTop;
+    }
+
+    // 更新桌面端目录可见性
+    function updateDesktopTocVisibility() {
+        const shouldShow = shouldShowDesktopTOC();
+        
+        if (desktopToc) {
+            desktopToc.classList.toggle('toc-hidden', !shouldShow);
+        }
+    }
+
+    // 更新当前标题显示
+    function updateCurrentHeading(headingText: string | null) {
+        if (mobileCurrentHeading) {
+            mobileCurrentHeading.textContent = headingText || '';
+        }
+        currentActiveHeading = headingText;
+    }
+
+    // 更新活跃状态
+    function updateActiveStates(activeId: string | null) {
+        // 清除所有活跃状态
+        tocLinks.forEach(link => {
+            link.classList.remove('text-blue-600', 'dark:text-blue-400', 'bg-blue-50', 'dark:bg-blue-900/20', 'border-blue-600', 'dark:border-blue-400');
+            link.classList.add('text-gray-600', 'dark:text-gray-400', 'border-transparent');
+        });
+
+        if (activeId) {
+            // 设置当前活跃项
+            const activeLinks = document.querySelectorAll(`[data-target="${activeId}"]`);
+            let activeTitle: string | null = null;
+
+            activeLinks.forEach(link => {
+                link.classList.remove('text-gray-600', 'dark:text-gray-400', 'border-transparent');
+                link.classList.add('text-blue-600', 'dark:text-blue-400', 'bg-blue-50', 'dark:bg-blue-900/20', 'border-blue-600', 'dark:border-blue-400');
+                
+                if (!activeTitle) {
+                    activeTitle = link.getAttribute('data-title');
+                }
+            });
+
+            updateCurrentHeading(activeTitle);
+            
+            // 桌面端自动滚动到活跃项
+            if (window.innerWidth >= 1024) {
+                scrollToActiveItemInTOC('desktop');
+            }
+        } else {
+            updateCurrentHeading(null);
+        }
+    }
+
+    // 自动滚动到目录中的活跃项
+    function scrollToActiveItemInTOC(type: 'desktop' | 'mobile') {
+        const activeLink = document.querySelector(`.${type}-toc-link.text-blue-600`);
+        if (activeLink) {
+            const container = type === 'desktop' 
+                ? document.getElementById('desktop-toc')
+                : document.getElementById('mobile-toc-content');
+
+            if (container) {
+                const containerRect = container.getBoundingClientRect();
+                const activeRect = activeLink.getBoundingClientRect();
+                const scrollTop = container.scrollTop;
+                const offset = activeRect.top - containerRect.top - containerRect.height / 2 + activeRect.height / 2;
+
+                container.scrollTo({
+                    top: scrollTop + offset,
+                    behavior: 'smooth'
+                });
+            }
+        }
+    }
+
+    // 使用改进的 IntersectionObserver
+    const observerOptions = {
+        root: null,
+        rootMargin: getOptimalRootMargin(),
+        threshold: [0, 0.25, 0.5, 0.75, 1]
+    };
+
+    function getOptimalRootMargin(): string {
+        const navBarHeight = document.querySelector('header')?.getBoundingClientRect().height || 0;
+        const mobileTocHeight = mobileToc?.getBoundingClientRect().height || 0;
+        const topOffset = navBarHeight + (window.innerWidth < 1024 ? mobileTocHeight : 0) + 32;
+        const bottomOffset = topOffset + 53;
+        const viewportHeight = window.innerHeight;
+        
+        return `-${topOffset}px 0% ${bottomOffset - viewportHeight}px`;
+    }
+
+    const observer = new IntersectionObserver((entries) => {
+        let bestMatch: Element | null = null;
+        let bestRatio = 0;
+
+        // 找到最佳匹配的标题
+        entries.forEach(entry => {
+            if (entry.isIntersecting) {
+                const element = entry.target;
+                
+                // 检查是否是我们关心的标题
+                const isTrackedHeading = headingElements.includes(element as HTMLElement);
+                if (isTrackedHeading && entry.intersectionRatio > bestRatio) {
+                    bestMatch = element;
+                    bestRatio = entry.intersectionRatio;
+                }
+            }
+        });
+
+        if (bestMatch) {
+            const elementId = (bestMatch as any).id;
+            if (elementId) {
+                updateActiveStates(elementId);
+            }
+        }
+    }, observerOptions);
+
+    // 监听滚动事件
+    let scrollTimeout: number | null = null;
+    window.addEventListener('scroll', () => {
+        if (scrollTimeout) {
+            clearTimeout(scrollTimeout);
+        }
+
+        scrollTimeout = window.setTimeout(() => {
+            updateDesktopTocVisibility();
+        }, 16); // 使用更高频率的更新
+    });
+
+    // 窗口大小变化时重新计算
+    let resizeTimeout: number | null = null;
+    window.addEventListener('resize', () => {
+        if (resizeTimeout) {
+            clearTimeout(resizeTimeout);
+        }
+        
+        resizeTimeout = window.setTimeout(() => {
+            updateDesktopTocVisibility();
+            
+            // 只在切换到桌面端时收起移动端下拉框
+            if (window.innerWidth >= 1024) {
+                // 桌面端时，确保移动端下拉框收起
+                if (mobileContent && !mobileContent.classList.contains('hidden')) {
+                    mobileContent.classList.add('hidden');
+                    const svg = mobileToggle?.querySelector('svg');
+                    if (svg) {
+                        svg.classList.remove('rotate-180');
+                    }
+                }
+            }
+            // 移动端时不做任何处理，保持用户当前的展开/收起状态
+            
+            // 重新设置 observer 的 rootMargin
+            observer.disconnect();
+            const newObserver = new IntersectionObserver((entries) => {
+                let bestMatch: Element | null = null;
+                let bestRatio = 0;
+
+                entries.forEach(entry => {
+                    if (entry.isIntersecting) {
+                        const element = entry.target;
+                        const isTrackedHeading = headingElements.includes(element as HTMLElement);
+                        if (isTrackedHeading && entry.intersectionRatio > bestRatio) {
+                            bestMatch = element;
+                            bestRatio = entry.intersectionRatio;
+                        }
+                    }
+                });
+
+                if (bestMatch) {
+                    const elementId = (bestMatch as any).id;
+                    if (elementId) {
+                        updateActiveStates(elementId);
+                    }
+                }
+            }, {
+                ...observerOptions,
+                rootMargin: getOptimalRootMargin()
+            });
+            
+            headingElements.forEach(heading => {
+                newObserver.observe(heading);
+            });
+            
+            // 替换旧的 observer
+            Object.setPrototypeOf(observer, newObserver);
+        }, 200);
+    });
+
+    // 开始观察所有标题元素
+    headingElements.forEach(heading => {
+        observer.observe(heading);
+    });
+
+    // 平滑滚动到目标位置
+    tocLinks.forEach(link => {
+        link.addEventListener('click', (e) => {
+            e.preventDefault();
+
+            const targetId = link.getAttribute('data-target');
+            const targetElement = targetId ? document.getElementById(targetId) : null;
+
+            if (targetElement) {
+                // 更新URL
+                history.pushState(null, '', `#${targetId}`);
+                
+                // 计算滚动位置
+                const offset = window.innerWidth < 1024 ? 120 : 80;
+                const elementPosition = targetElement.offsetTop - offset;
+
+                window.scrollTo({
+                    top: elementPosition,
+                    behavior: 'smooth'
+                });
+
+                // 移动端点击后收起下拉框
+                if (window.innerWidth < 1024 && mobileContent) {
+                    mobileContent.classList.add('hidden');
+                    const svg = mobileToggle?.querySelector('svg');
+                    if (svg) {
+                        svg.classList.remove('rotate-180');
+                    }
+                }
+            }
+        });
+    });
+});
+</script>

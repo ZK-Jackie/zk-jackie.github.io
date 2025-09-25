@@ -1,0 +1,42 @@
+---
+import type { Heading } from "@utils/toc";
+
+interface Props {
+  heading: Heading;
+  depth?: number;
+}
+
+const { heading, depth = heading.depth } = Astro.props;
+
+// 根据深度动态计算样式
+const getDepthStyles = (currentDepth: number) => {
+  const paddingLeft = Math.min(currentDepth * 0.2, 5); // 最大缩进5rem
+  const textSize = currentDepth <= 2 ? 'text-base' : currentDepth <= 3 ? 'text-sm' : 'text-xs';
+  const textColor = currentDepth <= 2
+    ? 'text-gray-600 dark:text-gray-400'
+    : 'text-gray-500 dark:text-gray-500';
+
+  return {
+    paddingLeft: `${paddingLeft}rem`,
+    textSize,
+    textColor
+  };
+};
+
+const styles = getDepthStyles(depth);
+---
+
+<li class="relative hover:text-blue-500 dark:hover:text-blue-100">
+    <a href={`#${heading.slug}`}
+       class={`block ${styles.textColor} ${styles.textSize} hover:text-blue-600 dark:hover:text-blue-400 transition-colors font-medium`}
+       style={`padding-left: ${styles.paddingLeft}`}>
+        {heading.text}
+    </a>
+    {heading.subheadings.length > 0 && (
+      <ul class="relative" style={`margin-left: ${styles.paddingLeft}`}>
+          {heading.subheadings.map((subheading) => (
+            <Astro.self heading={subheading} depth={depth + 1} />
+          ))}
+      </ul>
+    )}
+</li>

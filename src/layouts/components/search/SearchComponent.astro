@@ -1,0 +1,157 @@
+---
+interface Props {
+  placeholder?: string;
+  className?: string;
+}
+
+const { 
+  placeholder = "搜索文章...",
+  className = ""
+} = Astro.props;
+---
+
+<div class={`search-container ${className}`}>
+  <div class="mb-8">
+    <div class="relative">
+      <label for="search-input"></label>
+      <input
+        type="text" 
+        id="search-input" 
+        placeholder={placeholder}
+        class="w-full px-4 py-3 border border-gray-300 dark:border-gray-700 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white dark:bg-gray-800 text-gray-900 dark:text-white"
+        autocomplete="off"
+      />
+      <div class="absolute right-3 top-3 text-gray-400">
+        <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+        </svg>
+      </div>
+    </div>
+  </div>
+  
+  <div id="search-info" class="text-center mb-6 text-gray-600 dark:text-gray-400 text-lg"></div>
+  
+  <div id="search-results" class="grid grid-cols-1 md:grid-cols-2 gap-6">
+    <!-- Results will be populated by JavaScript -->
+  </div>
+  
+  <div id="no-results" class="hidden text-center py-8">
+    <p class="text-lg text-gray-600 dark:text-gray-400">未搜索到相关结果</p>
+  </div>
+</div>
+
+<script>
+  import { searchEngine } from './searchEngine';
+  import { SearchResultRenderer } from './searchResultRenderer';
+
+  class SearchComponent {
+    private searchInput: HTMLInputElement;
+    private renderer: SearchResultRenderer;
+    private debounceTimer: number | undefined;
+
+    constructor() {
+      const searchInput = document.getElementById('search-input') as HTMLInputElement;
+      if (!searchInput) {
+        throw new Error('搜索输入框未找到');
+      }
+
+      this.searchInput = searchInput;
+      this.renderer = new SearchResultRenderer('search-results', 'no-results', 'search-info');
+      
+      this.initialize().catch(error => {
+        console.error('初始化搜索组件失败：', error);
+        this.renderer.showError('搜索组件初始化失败');
+      });
+    }
+
+    private async initialize(): Promise<void> {
+      // Check for URL search parameters
+      const searchParams = new URLSearchParams(window.location.search);
+      const searchQuery = searchParams.get('q');
+
+      // Handle search input
+      this.searchInput.addEventListener('input', (e) => {
+        const target = e.target as HTMLInputElement;
+        this.handleSearchInput(target.value);
+      });
+
+      // Focus search input
+      this.searchInput.focus();
+
+      // If there's a search query in the URL, perform search after ensuring engine is ready
+      if (searchQuery) {
+        this.searchInput.value = searchQuery;
+        // 显示加载状态
+        this.renderer.showLoading();
+        try {
+          // 等待搜索引擎准备好
+          await searchEngine.isReady();
+          // 执行搜索
+          await this.performSearch(searchQuery);
+        } catch (error) {
+          console.error('搜索引擎初始化失败：', error);
+          this.renderer.showError('搜索失败，请稍后重试');
+        }
+      }
+    }
+
+    private handleSearchInput(value: string): void {
+      clearTimeout(this.debounceTimer);
+      this.debounceTimer = window.setTimeout(() => {
+        const query = value.trim();
+        this.performSearch(query);
+      }, 300); // Debounce for better performance
+    }
+
+    private async performSearch(query: string): Promise<void> {
+      if (!query || query.trim() === '') {
+        this.renderer.clear();
+        this.updateURL('');
+        return;
+      }
+
+      try {
+        // Show loading state
+        this.renderer.showLoading();
+
+        // Update URL with search query
+        this.updateURL(query);
+
+        // Perform search
+        const results = await searchEngine.search(query);
+        this.renderer.displayResults(results, query);
+      } catch (error) {
+        console.error('搜索失败:', error);
+        this.renderer.showError('搜索失败，请稍后重试');
+      }
+    }
+
+    private updateURL(query: string): void {
+      const searchParams = new URLSearchParams(window.location.search);
+      if (query) {
+        searchParams.set('q', query);
+      } else {
+        searchParams.delete('q');
+      }
+      
+      const newQuery = searchParams.toString();
+      const newUrl = window.location.pathname + (newQuery ? '?' + newQuery : '');
+      history.pushState(null, '', newUrl);
+    }
+  }
+
+  // Initialize search component when DOM is loaded
+  document.addEventListener('DOMContentLoaded', () => {
+    try {
+      new SearchComponent();
+    } catch (error) {
+      console.error('Failed to create search component:', error);
+      // 显示错误信息
+      const searchResults = document.getElementById('search-results');
+      if (searchResults) {
+        searchResults.innerHTML = '<div class="col-span-1 md:col-span-2 text-center py-8 text-red-500 text-lg">搜索组件加载失败</div>';
+        searchResults.classList.remove('hidden');
+      }
+    }
+  });
+</script>

@@ -1,0 +1,107 @@
+---
+import { getCollection } from 'astro:content';
+import Layout from '@layouts/Layout.astro';
+import PostCard from '@components/post/PostCard.astro';
+import Pagination from '@components/common/Pagination.astro';
+import { getPagination } from '@utils/pagination';
+import { contentConfig, seoConfig } from '@config';
+
+export async function getStaticPaths() {
+  const posts = await getCollection('posts', ({ data }) => {
+    return !data.draft;
+  });
+  
+  // Get all unique tags
+  const tags = [...new Set(posts.flatMap(post => post.data.tags || []))];
+  
+  // Create paths for each tag and its pages
+  return tags.flatMap(tag => {
+    // Filter posts by tag
+    const tagPosts = posts.filter(post => 
+      post.data.tags && post.data.tags.includes(tag)
+    ).sort((a, b) => {
+      return new Date(b.data.date || 0).getTime() - new Date(a.data.date || 0).getTime();
+    });
+    
+    // Generate pages for this tag
+    const totalPages = Math.ceil(tagPosts.length / contentConfig.postsPerPage);
+    
+    return Array.from({ length: totalPages }).map((_, i) => {
+      const page = i + 1;
+      // Skip page 1 as it's handled by the index.astro
+      if (page === 1) return null;
+      
+      return {
+        params: { 
+          tag: tag.toLowerCase(),
+          page: page.toString()
+        },
+        props: { 
+          tag,
+          posts: tagPosts,
+          page,
+          count: tagPosts.length
+        }
+      };
+    }).filter(Boolean); // Remove null entries
+  });
+}
+
+interface Props { 
+  tag: string;
+  posts: Array<any>;
+  page: string;
+  count: number;
+}
+
+const { tag, posts, page, count } = Astro.props;
+const currentPage = parseInt(page);
+const basePath = `/tags/${tag.toLowerCase()}`;
+
+// Get pagination data
+const { startIndex, endIndex, prevUrl, nextUrl, totalPages } = getPagination({ 
+  page: currentPage, 
+  totalPosts: count, 
+  basePath 
+});
+
+// Get posts for the current page
+const paginatedPosts = posts.slice(startIndex, endIndex);
+
+// Set noindex based on site config
+const noindex = seoConfig.noindex.includes("/tags") || seoConfig.noindex.includes("*");
+
+// Format the tag name for display
+const formattedTag = tag.charAt(0).toUpperCase() + tag.slice(1);
+---
+
+<Layout 
+  title={`标签：${formattedTag} - 第${currentPage}页`}
+  description={`查看标签"${formattedTag}"下的文章 - 第${currentPage}页`}
+  noindex={noindex}
+>
+  <div class="w-full py-8">
+    <header class="mb-10">
+      <h1 class="text-3xl md:text-4xl font-bold text-gray-900 dark:text-white mb-4">
+        标签：#{formattedTag}
+      </h1>
+      <p class="text-lg text-gray-700 dark:text-gray-300">
+        第 {currentPage} 页，共 {totalPages} 页 - 共 {count} 篇文章
+      </p>
+    </header>
+    
+    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+      {paginatedPosts.map((post) => (
+        <PostCard post={post} />
+      ))}
+    </div>
+    
+    <Pagination
+      currentPage={currentPage}
+      totalPages={totalPages}
+      prevUrl={prevUrl}
+      nextUrl={nextUrl}
+      basePath={basePath}
+    />
+  </div>
+</Layout>
