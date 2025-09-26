@@ -1,5 +1,6 @@
 ---
-import { siteConfig, seoConfig } from '@config';
+import { siteConfig, seoConfig, featuresConfig } from '@config';
+import picomatch from "picomatch";
 
 export interface Props {
   title?: string;
@@ -43,19 +44,18 @@ const {
   categories
 } = Astro.props;
 
+// RSS feed
+const rssEnabled = featuresConfig.rss;
+
 // Determine if we should add noindex based on site config and page type
 let shouldNoindex = noindex;
 
 // Check if this is a tag, category, or search page that should be noindexed
-if ("*" in seoConfig.noindex){
+if (seoConfig.noindex.includes('*')){
   shouldNoindex = true;
-} else {
-  for (const path of seoConfig.noindex) {
-    if (Astro.url.pathname.includes(path)) {
-      shouldNoindex = true;
-      break;
-    }
-  }
+}
+if (!shouldNoindex) {
+  shouldNoindex = picomatch.isMatch(Astro.url.pathname, seoConfig.noindex || [])
 }
 
 // Format dates for schema
@@ -169,7 +169,9 @@ try {
 ---
 
 <!-- SEO Meta Tags -->
-<title>{title || siteConfig.title}</title>
+<title>
+  {title || siteConfig.title}
+</title>
 <meta name="description" content={description} />
 <link rel="canonical" href={canonicalURL} />
 
@@ -223,8 +225,9 @@ try {
 )}
 
 <!-- RSS Feed -->
-<!--<link rel="alternate" type="application/rss+xml" title={`${siteConfig.title} RSS Feed`} href="/rss.xml" /> -->
-
+{rssEnabled &&
+  <link rel="alternate" type="application/rss+xml" title={`${siteConfig.title} RSS Feed`} href="/rss.xml" />
+}
 <!-- Schema.org JSON-LD -->
 <script type="application/ld+json" set:html={JSON.stringify(schema)} />
 

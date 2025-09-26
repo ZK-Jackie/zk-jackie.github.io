@@ -1,10 +1,10 @@
 ---
 import type { MarkdownHeading } from 'astro';
-import type {InferEntrySchema} from "astro:content";
+import type { InferEntrySchema } from "astro:content";
 import { Image } from 'astro:assets';
 import { Icon } from 'astro-icon/components';
 import Layout from './Layout.astro';
-import {featuresConfig} from "@config";
+import { featuresConfig } from "@config";
 import Breadcrumb from '@components/common/Breadcrumb.astro';
 import Link from '@components/common/Link.astro';
 import Counter from "@components/common/Counter.astro";
@@ -14,7 +14,7 @@ import RelatedPosts from '@components/post/RelatedPosts.astro';
 import SocialShare from '@components/post/SocialShare.astro';
 import ReadingProgress from '@components/post/ReadingProgress.astro';
 import ReactiveTOC from "@components/post/ReactiveTOC.astro";
-import { formatDate } from '@utils/dateUtils';
+import { formatDate, formatDatetimez } from "@utils/dateUtils";
 
 interface Props {
   postSlug: string;
@@ -71,7 +71,7 @@ breadcrumbs.push({ name: title, url: canonicalURL });
       <div class="flex flex-wrap items-center text-gray-500 dark:text-gray-400 mb-4 gap-4">
         <!-- Publish Date -->
         {publishTime && (
-          <div class="flex items-center" title="发布日期">
+          <div class="flex items-center" title={"发布时间：" + formatDatetimez(publishTime)}>
             <Icon name="mdi:calendar" class="w-5 h-5 mr-1" />
             <time datetime={publishTime.toISOString()}>
               {formatDate(publishTime)}
@@ -81,7 +81,7 @@ breadcrumbs.push({ name: title, url: canonicalURL });
 
         <!-- Modified Date -->
         {updateTime && (
-          <div class="flex items-center" title="最后更新日期">
+          <div class="flex items-center" title={"最后更新时间：" + formatDatetimez(updateTime)}>
             <Icon name="mdi:calendar-edit" class="w-5 h-5 mr-1" />
             <time datetime={updateTime.toISOString()}>
               {formatDate(updateTime)}

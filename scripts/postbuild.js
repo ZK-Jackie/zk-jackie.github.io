@@ -103,7 +103,17 @@ async function optimizeDist() {
       }
     }
 
-    // 5. 显示优化结果统计
+    // 5. 生成 Gzip 压缩文件
+    console.log('🗜️ 正在生成 Gzip 压缩文件...')
+    const gzipStats = await compressFiles({
+      algorithm: 'gzip',
+      level: 6, // 最高压缩级别，适合预压缩
+      extensions: ['.js', '.css', '.html', '.xml', '.json'],
+      skipPatterns: ['*.min.js', '*.min.css', '*.gz', '*.br'], // 跳过已压缩的文件
+      enabled: true
+    })
+
+    // 6. 显示优化结果统计
     console.log('\n📊 优化结果统计:')
     if (jsFiles.length > 0) {
       const jsSavings = jsOriginalSize - jsCompressedSize
@@ -116,13 +126,20 @@ async function optimizeDist() {
       const htmlPercent = ((htmlSavings / htmlOriginalSize) * 100).toFixed(1)
       console.log(`  📄 HTML: ${formatBytes(htmlOriginalSize)} → ${formatBytes(htmlCompressedSize)} (节省 ${formatBytes(htmlSavings)}, ${htmlPercent}%)`)
     }
+
+    if (gzipStats.fileCount > 0) {
+      const gzipSavings = gzipStats.originalTotal - gzipStats.compressedTotal
+      const gzipPercent = ((gzipSavings / gzipStats.originalTotal) * 100).toFixed(1)
+      console.log(`  🗜️ Gzip压缩: ${formatBytes(gzipStats.originalTotal)} → ${formatBytes(gzipStats.compressedTotal)} (节省 ${formatBytes(gzipSavings)}, ${gzipPercent}%)`)
+    }
     
     const totalOriginal = jsOriginalSize + htmlOriginalSize
     const totalCompressed = jsCompressedSize + htmlCompressedSize
     const totalSavings = totalOriginal - totalCompressed
     const totalPercent = totalOriginal > 0 ? ((totalSavings / totalOriginal) * 100).toFixed(1) : '0'
     
-    console.log(`  🎯 总计: ${formatBytes(totalOriginal)} → ${formatBytes(totalCompressed)} (节省 ${formatBytes(totalSavings)}, ${totalPercent}%)`)
+    console.log(`  🎯 文件优化: ${formatBytes(totalOriginal)} → ${formatBytes(totalCompressed)} (节省 ${formatBytes(totalSavings)}, ${totalPercent}%)`)
+    console.log(`  📁 生成了 ${gzipStats.fileCount} 个 .gz 文件供 Nginx 使用`)
     console.log('\n✨ 构建后优化完成!')
     
   } catch (error) {
@@ -131,8 +148,11 @@ async function optimizeDist() {
   }
 }
 
-async function findFiles(dir, ext, filter=null) {
+async function findFiles(dir, ext, filter = null) {
   let results = []
+  
+  // 支持多个扩展名
+  const extensions = Array.isArray(ext) ? ext : [ext]
   
   try {
     const list = fs.readdirSync(dir)
@@ -142,9 +162,22 @@ async function findFiles(dir, ext, filter=null) {
       const stat = fs.statSync(fullPath)
 
       if (stat && stat.isDirectory()) {
+        // 递归搜索子目录
         results = results.concat(await findFiles(fullPath, ext, filter))
-      } else if (file.endsWith(ext) && (!filter || filter(fullPath))) {
-        results.push(fullPath)
+      } else {
+        // 检查文件扩展名
+        const matchesExtension = extensions.some(extension => {
+          // 支持通配符模式，如 "*.js"
+          if (extension.includes('*')) {
+            const regex = new RegExp(extension.replace(/\*/g, '.*') + '$')
+            return regex.test(file)
+          }
+          return file.endsWith(extension)
+        })
+        
+        if (matchesExtension && (!filter || filter(fullPath))) {
+          results.push(fullPath)
+        }
       }
     }
   } catch (error) {
@@ -162,50 +195,89 @@ function formatBytes(bytes) {
   return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i]
 }
 
-async function compress(logic="gzip") {
+
+async function compressFiles(options = {}) {
+  const { 
+    algorithm = 'gzip', 
+    level = 6, 
+    skipPatterns = ['*.min.js', '*.min.css'],
+    extensions = ['.js', '.css', '.html'],
+    enabled = true 
+  } = options
+  
+  if (!enabled) {
+    console.log('ℹ️  文件压缩已跳过（已禁用）')
+    return { originalTotal: 0, compressedTotal: 0, fileCount: 0 }
+  }
+
   const zlib = await import('zlib')
   const distPath = path.join(process.cwd(), 'dist')
+  
   const compressions = {
-    gzip: zlib.gzipSync,
-    brotli: zlib.brotliCompressSync,
+    gzip: (content) => zlib.gzipSync(content, { level }),
+    brotli: (content) => zlib.brotliCompressSync(content, { 
+      params: { 
+        [zlib.constants.BROTLI_PARAM_QUALITY]: level 
+      } 
+    }),
   }
 
-  if (!compressions[logic]) {
-    console.error(`❌ 不支持的压缩逻辑: ${logic}`)
-    return
+  if (!compressions[algorithm]) {
+    console.error(`❌ 不支持的压缩算法: ${algorithm}`)
+    return { originalTotal: 0, compressedTotal: 0, fileCount: 0 }
   }
 
-  console.log(`🗜️ 正在使用 ${logic} 压缩文件...`)
+  console.log(`🗜️ 正在使用 ${algorithm} (级别 ${level}) 压缩文件...`)
 
-  const filesToCompress = await findFiles(distPath, '.js')
-    .concat(await findFiles(distPath, '.css'))
-    .concat(await findFiles(distPath, '.html'))
-
-  for (const file of filesToCompress) {
-    const content = fs.readFileSync(file)
-    const compressed = compressions[logic](content)
-    fs.writeFileSync(`${file}.${logic}`, compressed)
-    console.log(`  ✅ 已压缩: ${path.relative(distPath, file)} → ${path.relative(distPath, file)}.${logic}`)
+  // 获取所有需要压缩的文件
+  let filesToCompress = []
+  for (const ext of extensions) {
+    const files = await findFiles(distPath, ext, (filePath) => {
+      // 跳过已经是压缩文件的文件
+      const fileName = path.basename(filePath)
+      return !skipPatterns.some(pattern => {
+        const regex = new RegExp(pattern.replace(/\*/g, '.*'))
+        return regex.test(fileName)
+      })
+    })
+    filesToCompress = filesToCompress.concat(files)
   }
 
-  console.log('✨ 压缩完成!')
+  console.log(`📄 找到 ${filesToCompress.length} 个文件需要压缩`)
 
-  // 显示压缩统计
   let originalTotal = 0
   let compressedTotal = 0
+  let processedFiles = 0
 
   for (const file of filesToCompress) {
-    const originalSize = fs.statSync(file).size
-    const compressedSize = fs.statSync(`${file}.${logic}`).size
-    originalTotal += originalSize
-    compressedTotal += compressedSize
+    try {
+      const content = fs.readFileSync(file)
+      const originalSize = content.length
+      originalTotal += originalSize
+      
+      const compressed = compressions[algorithm](content)
+      const compressedSize = compressed.length
+      compressedTotal += compressedSize
+      
+      const outputFile = `${file}.${algorithm === 'gzip' ? 'gz' : algorithm}`
+      fs.writeFileSync(outputFile, compressed)
+      processedFiles++
+      
+      const savings = originalSize - compressedSize
+      const percent = ((savings / originalSize) * 100).toFixed(1)
+      console.log(`  ✅ ${path.relative(distPath, file)} → ${path.basename(outputFile)} (${formatBytes(originalSize)} → ${formatBytes(compressedSize)}, -${percent}%)`)
+    } catch (error) {
+      console.warn(`  ⚠️ 压缩失败: ${path.relative(distPath, file)} - ${error.message}`)
+    }
   }
 
-  const savings = originalTotal - compressedTotal
-  const percent = ((savings / originalTotal) * 100).toFixed(1)
+  const totalSavings = originalTotal - compressedTotal
+  const totalPercent = originalTotal > 0 ? ((totalSavings / originalTotal) * 100).toFixed(1) : '0'
 
-  console.log(`📊 压缩统计: ${formatBytes(originalTotal)} → ${formatBytes(compressedTotal)} (节省 ${formatBytes(savings)}, ${percent}%)`)
+  console.log(`✨ ${algorithm} 压缩完成! 处理了 ${processedFiles} 个文件`)
+  console.log(`📊 压缩统计: ${formatBytes(originalTotal)} → ${formatBytes(compressedTotal)} (节省 ${formatBytes(totalSavings)}, ${totalPercent}%)`)
 
+  return { originalTotal, compressedTotal, fileCount: processedFiles }
 }
 
 optimizeDist().catch(console.error)

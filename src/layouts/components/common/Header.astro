@@ -18,12 +18,12 @@ const mainMenu = navigationConfig.main;
               <Image
                 src={siteConfig.logo}
                 alt={siteConfig.title + ' Logo'}
-                width={siteConfig.logoSize ? Number(siteConfig.logoSize[0]) : 240}
-                height={siteConfig.logoSize ? Number(siteConfig.logoSize[1]) : 30}
+                width={siteConfig.logoSize ? siteConfig.logoSize[0] : 240}
+                height={siteConfig.logoSize ? siteConfig.logoSize[1] : 30}
                 class="mr-2"
               />
             ) : (
-              <span class="font-bold text-2xl">{siteConfig.title}</span>
+              <span class="font-bold text-2xl">{siteConfig.logo}</span>
             )
           }
         </Link>
@@ -260,9 +260,9 @@ const mainMenu = navigationConfig.main;
     const desktopDropdowns = document.querySelectorAll('.dropdown');
     
     desktopDropdowns.forEach(dropdown => {
-      const toggle = dropdown.querySelector('.dropdown-toggle');
-      const menu = dropdown.querySelector('.dropdown-menu');
-      const icon = dropdown.querySelector('.dropdown-icon');
+      const toggle = dropdown.querySelector('.dropdown-toggle') as HTMLAnchorElement;
+      const menu = dropdown.querySelector('.dropdown-menu') as HTMLElement;
+      const icon = dropdown.querySelector('.dropdown-icon') as SVGElement;
       
       if (!toggle || !menu) return;
       
@@ -273,8 +273,8 @@ const mainMenu = navigationConfig.main;
         // 关闭其他所有下拉菜单
         desktopDropdowns.forEach(otherDropdown => {
           if (otherDropdown !== dropdown) {
-            const otherMenu = otherDropdown.querySelector('.dropdown-menu');
-            const otherIcon = otherDropdown.querySelector('.dropdown-icon');
+            const otherMenu = otherDropdown.querySelector('.dropdown-menu') as HTMLElement;
+            const otherIcon = otherDropdown.querySelector('.dropdown-icon') as SVGElement;
             if (otherMenu) {
               otherMenu.style.opacity = '0';
               otherMenu.style.visibility = 'hidden';
@@ -326,8 +326,8 @@ const mainMenu = navigationConfig.main;
     if (!supportsHover && !target.closest('.dropdown')) {
       const desktopDropdowns = document.querySelectorAll('.dropdown');
       desktopDropdowns.forEach(dropdown => {
-        const menu = dropdown.querySelector('.dropdown-menu');
-        const icon = dropdown.querySelector('.dropdown-icon');
+        const menu = dropdown.querySelector('.dropdown-menu') as HTMLElement;
+        const icon = dropdown.querySelector('.dropdown-icon') as SVGElement;
         if (menu) {
           menu.style.opacity = '0';
           menu.style.visibility = 'hidden';

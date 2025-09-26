@@ -2,44 +2,63 @@
 export interface SiteConfig {
   // Basic site information
   site: {
+    // site name, used in seo
     title: string;
+    // site prologue or tagline
     prologue: string;
+    // site description, used in meta description
     description: string;
+    // site author
     author: string;
-    logoType?: 'text' | 'image'; // logo type
-    logo: string;                // artistic logo image URL or text
-    logoSize?: [string, string]; // logo size [width, height], used for image logos
-    logoText: string;            // plain text logo
+    // logo type
+    logoType?: 'text' | 'image';
+    // artistic logo image's URL or text
+    logo: string;
+    // logo size [width, height], used for `image` logos, unit is "px"
+    logoSize?: [number, number];
+    // copyright information, e.g., "© 2025 Your Name. All rights reserved."
     copyright: string;
   };
 
   // SEO settings
   seo: {
-    noindex: Array<string>; // ["*"] for not indexing all pages
+    // Pages or patterns to exclude from indexing, ["**"] for not indexing all pages
+    noindex: Array<string>;
+    // Open Graph image URL for social sharing
     ogImage: string;
+    // Robots.txt configuration, array of rules for different user agents
+    robots: RobotsRules[];
   };
 
   // Content settings
   content: {
+    // Number of posts per page on listing pages
     postsPerPage: number;
+    // Length of post summaries in characters
     summaryLength: number;
+    // Maximum depth for table of contents in posts
     tocMaxDepth: number;
   };
 
   // Features
   features: {
+    // Enable RSS feed generation
+    rss: boolean;
     // Enable site statistics, CounterScale script will be added
     statistics: boolean;
     // Page statistics wound be seen in the head of blog posts, if this and `statistics` are enabled
     pageStatistics: boolean;
     // Site statistics will be seen in the footer, if this and `statistics` are enabled
     siteStatistics: boolean;
+    // Page share options, e.g., ["email", "qrcode"]
     pageShare: string[];
   };
 
   // Navigation menu
   navigation: {
+    // Navigation items for the main menu and footer menu
     main: NavigationMenuItem[];
+    // Navigation items for the quick access menu in the footer
     footer?: NavigationMenuItem[];
   };
 
@@ -134,4 +153,17 @@ export interface SocialLinks {
   skype?: string;
   website?: string;
   wechatOfficial?: string; // WeChat Official Account
+}
+
+export interface RobotsRules {
+  // e.g., "Googlebot", "*"
+  userAgent: string;
+  // e.g., ["/"]
+  allow?: string[];
+  // e.g., ["/admin", "/private"]
+  disallow?: string[];
+  // e.g., 10 (in seconds)
+  crawlDelay?: number;
+  // e.g., "https://example.com/sitemap.xml"
+  sitemap?: string;
 }

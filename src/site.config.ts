@@ -12,7 +12,6 @@ const env: EnvConfig = {
   private: {}
 };
 
-console.log(env)
 
 export const config: SiteConfig = {
   // Basic site information
@@ -23,14 +22,19 @@ export const config: SiteConfig = {
     author: "ZK-Jackie",
     logoType: "text",
     logo: "全栈学徒实录",
-    logoSize: ["200", "30"],
-    logoText: "全栈学徒实录",
+    logoSize: [200, 30],
     copyright: "© 2025 Jackie. All rights reserved.",
   },
 
   seo: {
     ogImage: "/images/og-image.png",
-    noindex: ["*", "/tags", "/categories", "/authors", "/search", "/page"],
+    noindex: ["**", "/tags/**", "/categories/**", "/authors/**", "/search/**", "/page/**"],
+    robots: [
+      {
+        userAgent: "*",
+        disallow: ["/"],
+      }
+    ]
   },
 
   // Content settings
@@ -42,6 +46,7 @@ export const config: SiteConfig = {
 
   // Features
   features: {
+    rss: false,
     statistics: false,
     pageStatistics: true,
     siteStatistics: true,
