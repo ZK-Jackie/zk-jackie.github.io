@@ -2,8 +2,217 @@
 title: "Example Document"
 description: "An example document using all components in a single file."
 slug: "example-document"
-draft: true
 ---
+
+## Math Example
+
+### Inline Math
+
+[katex grammar](https://blog.sinlov.cn/posts/2023/03/16/markdown-%E6%95%B0%E5%AD%A6%E5%85%AC%E5%BC%8F%E6%8E%92%E7%89%88-katex-%E8%AF%AD%E6%B3%95)
+
+- code
+
+```markdown
+This is an inline math example: $E = mc^2$.
+
+
+This is a block math example with math delimiters:
+
+\```math
+\begin{matrix}
+    1 & x & x^2 \\
+    1 & y & y^2 \\
+    1 & z & z^2 \\
+\end{matrix}
+\```
+
+$$
+\begin{pmatrix} 1 & 2 \\ 3 & 4 \\ \end{pmatrix}
+$$
+
+```
+
+- example
+
+This is an inline math example: $E = mc^2$.
+
+This is a block math example with math delimiters:
+
+```math
+\begin{matrix}
+    1 & x & x^2 \\
+    1 & y & y^2 \\
+    1 & z & z^2 \\
+\end{matrix}
+```
+
+<br/>
+
+$$
+\begin{pmatrix} 1 & 2 \\ 3 & 4 \\ \end{pmatrix}
+$$
+
+
+
+## Enhanced Markdown Example
+
+[Expressive Code](https://expressive-code.com/key-features/syntax-highlighting/)
+
+### Code Block with filename
+
+- code
+
+```markdown
+
+\```html
+\<!-- src/content/index.html -->
+<div>File name comment example</div>
+\```
+
+\```js title="my-test-file.js"
+console.log('Title attribute example')
+\```
+
+```
+
+- example
+
+```html
+<!-- src/content/index.html -->
+<div>File name comment example</div>
+```
+
+<br/>
+
+```js title="my-test-file.js"
+console.log('Title attribute example')
+```
+
+
+### Terminal Style
+
+- code
+
+```markdown
+\```bash
+echo "This terminal frame has no title"
+\```
+
+\```powershell title="PowerShell terminal example"
+Write-Output "This one has a title!"
+\```
+
+\```zsh frame="none"
+echo "No frame for this one"
+\```
+
+\```ps frame="none" title="PowerShell_With_Plain_Title"
+Write-Output "No frame but with a title"
+\```
+```
+
+- example
+
+```bash
+echo "This terminal frame has no title"
+```
+
+<br/>
+
+```powershell title="PowerShell terminal example"
+Write-Output "This one has a title!"
+```
+
+<br/>
+
+```zsh frame="none"
+echo "No frame for this one"
+```
+
+<br/>
+
+```ps frame="none" title="PowerShell_With_Plain_Title"
+Write-Output "No frame but with a title"
+```
+
+
+### Line Marker
+
+- code
+
+```markdown
+\```js {2,4-5} del={6} add={8} "word" /\bb\w+[ey]\b/ ins="inserted" del="deleted" add={"1. add style text label": 11-14}
+function example() {
+  console.log('This line is highlighted');
+  console.log('This line is not highlighted');
+  console.log('This word is highlighted and Reg Exp is also supported, for example: bye boy');
+  console.log('You can set range of lines to be highlighted');
+  console.log('This line is not highlighted');
+  console.log('This line is deleted');
+  console.log('This line is not highlighted');
+  console.log('This line is new added');
+  console.log('These are "inserted" and "deleted" marker types');
+
+
+  console.log('You can also test long lines to see how they are handled in the code block.' +
+    ' When using text label, remember to spare a line for the label itself.');
+  console.log('This is the end of the text label');
+}
+\```
+```
+
+- example
+
+```js {2,4-5} del={7} add={9} "word" /\bb\w+[ey]\b/ ins="\"inserted\"" del="\"deleted\"" add={"1. add style text label": 12-15}
+function example() {
+  console.log('This line is highlighted');
+  console.log('This line is not highlighted');
+  console.log('This word is highlighted and Reg Exp is also supported, for example: bye boy');
+  console.log('You can set range of lines to be highlighted');
+  console.log('This line is not highlighted');
+  console.log('This line is deleted');
+  console.log('This line is not highlighted');
+  console.log('This line is new added');
+  console.log('These are "inserted" and "deleted" marker types');
+
+
+  console.log('You can also test long lines to see how they are handled in the code block.' +
+    ' When using text label, remember to spare a line for the label itself.');
+  console.log('This is the end of the text label');
+}
+```
+
+
+### Diff
+
+- code
+
+```markdown
+\```diff lang="js"
+  function thisIsJavaScript() {
+    // This entire block gets highlighted as JavaScript,
+    // and we can still add diff markers to it!
+-   console.log('Old code to be removed')
++   console.log('New and shiny code!')
+  }
+\```
+```
+
+- example
+
+
+```diff lang="js"
+  function thisIsJavaScript() {
+    // This entire block gets highlighted as JavaScript,
+    // and we can still add diff markers to it!
+-   console.log('Old code to be removed')
++   console.log('New and shiny code!')
+  }
+```
+
+
+
+## Components Example
 
 ### File Tree
 
@@ -166,5 +375,5 @@ draft: true
 
 - example
 
-<Button text="primary" color="blue">Primary Button</Button>
+<Button text="primary" color="blue" link="./#">Primary Button</Button>
 <Button text="secondary" color="blue">Secondary Button</Button>

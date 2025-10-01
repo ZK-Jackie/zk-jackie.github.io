@@ -4,59 +4,101 @@ import Layout from '@layouts/Layout.astro';
 import PostCard from '@components/post/PostCard.astro';
 import Pagination from '@components/common/Pagination.astro';
 import { getPagination } from '@utils/pagination';
-import { contentConfig, seoConfig } from '@config';
+import { siteConfig } from '@config';
+import { 
+  getAllTaxonomySlugs, 
+  slugToKey, 
+  keyToSlug, 
+  getTaxonomyLabel,
+  getTaxonomyDescription 
+} from '@utils/taxonomyUtils';
+import { getLocaleByUrl } from '@i18n/utils';
 
 export async function getStaticPaths() {
+  const { content: contentConfig } = siteConfig;
   const posts = await getCollection('posts', ({ data }) => {
     return !data.draft;
   });
   
-  // Get all unique tags
-  const tags = [...new Set(posts.flatMap(post => post.data.tags || []))];
+  // Get all unique tags from posts
+  const allPostTags = [...new Set(posts.flatMap(post => post.data.tags || []))];
+  
+  // Get configured tag slugs
+  const configuredSlugs = await getAllTaxonomySlugs('tags');
+  
+  // Create slugs for all tags (configured + unconfigured)
+  const unconfiguredSlugs = await Promise.all(
+    allPostTags.map(tag => keyToSlug('tags', tag))
+  );
+  
+  const allSlugs = new Set([
+    ...configuredSlugs,
+    ...unconfiguredSlugs
+  ]);
   
   // Create paths for each tag and its pages
-  return tags.flatMap(tag => {
-    // Filter posts by tag
-    const tagPosts = posts.filter(post => 
-      post.data.tags && post.data.tags.includes(tag)
-    ).sort((a, b) => {
-      return new Date(b.data.date || 0).getTime() - new Date(a.data.date || 0).getTime();
-    });
+  const paths = await Promise.all(
+    Array.from(allSlugs).map(async slug => {
+      // Convert slug back to original key for filtering
+      const tagKey = await slugToKey('tags', slug);
     
-    // Generate pages for this tag
-    const totalPages = Math.ceil(tagPosts.length / contentConfig.postsPerPage);
-    
-    return Array.from({ length: totalPages }).map((_, i) => {
-      const page = i + 1;
-      // Skip page 1 as it's handled by the index.astro
-      if (page === 1) return null;
+      // Filter posts by the original tag key
+      const tagPosts = posts.filter(post => 
+        post.data.tags && post.data.tags.includes(tagKey)
+      ).sort((a, b) => {
+        if (!a.data.publishTime) return 1;
+        if (!b.data.publishTime) return -1;
+        return b.data.publishTime.getTime() - a.data.publishTime.getTime();
+      });
       
-      return {
-        params: { 
-          tag: tag.toLowerCase(),
-          page: page.toString()
-        },
-        props: { 
-          tag,
-          posts: tagPosts,
-          page,
-          count: tagPosts.length
-        }
-      };
-    }).filter(Boolean); // Remove null entries
-  });
+      // Generate pages for this tag
+      const totalPages = Math.ceil(tagPosts.length / (contentConfig.postsPerPage || 11));
+      
+      return Array.from({ length: totalPages }).map((_, i) => {
+        const page = i + 1;
+        // Skip page 1 as it's handled by the index.astro
+        if (page === 1) return null;
+        
+        return {
+          params: { 
+            tag: slug,
+            page: page.toString()
+          },
+          props: { 
+            tagKey,
+            tagSlug: slug,
+            posts: tagPosts,
+            page,
+            count: tagPosts.length
+          }
+        };
+      }).filter(Boolean); // Remove null entries
+    })
+  );
+  
+  return paths.flat();
 }
 
 interface Props { 
-  tag: string;
+  tagKey: string;
+  tagSlug: string;
   posts: Array<any>;
   page: string;
   count: number;
 }
 
-const { tag, posts, page, count } = Astro.props;
+const { tagKey, tagSlug, posts, page, count } = Astro.props;
+const { seo: seoConfig } = siteConfig;
+
+// Get current locale
+const currentLocale = getLocaleByUrl(Astro.url);
+
+// Get localized label and description
+const tagLabel = await getTaxonomyLabel('tags', tagKey, currentLocale);
+const tagDescription = await getTaxonomyDescription('tags', tagKey, currentLocale);
+
 const currentPage = parseInt(page);
-const basePath = `/tags/${tag.toLowerCase()}`;
+const basePath = `/tags/${tagSlug}`;
 
 // Get pagination data
 const { startIndex, endIndex, prevUrl, nextUrl, totalPages } = getPagination({ 
@@ -69,24 +111,37 @@ const { startIndex, endIndex, prevUrl, nextUrl, totalPages } = getPagination({
 const paginatedPosts = posts.slice(startIndex, endIndex);
 
 // Set noindex based on site config
-const noindex = seoConfig.noindex.includes("/tags") || seoConfig.noindex.includes("*");
+const noindex = seoConfig?.noindex?.includes("/tags") || seoConfig?.noindex?.includes("*") || false;
 
-// Format the tag name for display
-const formattedTag = tag.charAt(0).toUpperCase() + tag.slice(1);
+// SEO meta data
+const pageTitle = currentLocale === 'en' 
+  ? `Tag: ${tagLabel} - Page ${currentPage}` 
+  : `标签：${tagLabel} - 第${currentPage}页`;
+const pageDescription = tagDescription || 
+  (currentLocale === 'en' 
+    ? `Browse articles tagged with ${tagLabel} - Page ${currentPage}` 
+    : `浏览标签为 ${tagLabel} 的文章 - 第${currentPage}页`);
 ---
 
 <Layout 
-  title={`标签：${formattedTag} - 第${currentPage}页`}
-  description={`查看标签"${formattedTag}"下的文章 - 第${currentPage}页`}
+  title={pageTitle}
+  description={pageDescription}
   noindex={noindex}
 >
   <div class="w-full py-8">
     <header class="mb-10">
       <h1 class="text-3xl md:text-4xl font-bold text-gray-900 dark:text-white mb-4">
-        标签：#{formattedTag}
+        {currentLocale === 'en' ? `Tag: #${tagLabel}` : `标签：#${tagLabel}`}
       </h1>
+      {tagDescription && (
+        <p class="text-lg text-gray-600 dark:text-gray-400 mb-4">
+          {tagDescription}
+        </p>
+      )}
       <p class="text-lg text-gray-700 dark:text-gray-300">
-        第 {currentPage} 页，共 {totalPages} 页 - 共 {count} 篇文章
+        {currentLocale === 'en' 
+          ? `Page ${currentPage} of ${totalPages} - ${count} articles` 
+          : `第 ${currentPage} 页，共 ${totalPages} 页 - 共 ${count} 篇文章`}
       </p>
     </header>
     

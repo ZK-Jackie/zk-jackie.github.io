@@ -1,4 +1,4 @@
-import { contentConfig } from "@config";
+import { siteConfig } from "@config";
 
 export interface PaginationProps {
   page: number;
@@ -7,7 +7,7 @@ export interface PaginationProps {
   basePath: string;
 }
 
-export function getPagination({ page, totalPosts, postsPerPage = contentConfig.postsPerPage, basePath }: PaginationProps) {
+export function getPagination({ page, totalPosts, postsPerPage = siteConfig.content.postsPerPage, basePath }: PaginationProps) {
   // Calculate total pages
   const totalPages = Math.max(1, Math.ceil(totalPosts / postsPerPage));
   

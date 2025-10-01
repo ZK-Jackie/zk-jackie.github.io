@@ -3,6 +3,7 @@ import { getCollection } from 'astro:content';
 import Layout from '@layouts/Layout.astro';
 import { Icon } from 'astro-icon/components';
 import Link from '@components/common/Link.astro';
+import { keyToSlug } from '@utils/taxonomyUtils';
 import {notDataDraft} from "@utils/collectionUtils";
 
 // Get all blog posts
@@ -10,17 +11,24 @@ const posts = await getCollection('posts', notDataDraft);
 
 // Get all unique categories and count posts for each
 const categories = [...new Set(posts.flatMap(post => post.data.categories || []))];
-const categoryCounts = categories.map(category => {
-  const count = posts.filter(post => 
-    post.data.categories && post.data.categories.includes(category)
-  ).length;
-  
-  return {
-    name: category,
-    count,
-    slug: category.toLowerCase()
-  };
-}).sort((a, b) => b.count - a.count); // Sort by post count (descending)
+const categoryCounts = await Promise.all(
+  categories.map(async category => {
+    const count = posts.filter(post => 
+      post.data.categories && post.data.categories.includes(category)
+    ).length;
+    
+    const slug = await keyToSlug('categories', category);
+    
+    return {
+      name: category,
+      count,
+      slug
+    };
+  })
+);
+
+// Sort by post count (descending)
+categoryCounts.sort((a, b) => b.count - a.count);
 ---
 
 <Layout 

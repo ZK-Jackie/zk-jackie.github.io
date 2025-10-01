@@ -4,37 +4,75 @@ import Layout from '@layouts/Layout.astro';
 import PostCard from '@components/post/PostCard.astro';
 import Pagination from '@components/common/Pagination.astro';
 import { getPagination } from '@utils/pagination';
-import { seoConfig } from '@config';
+import { siteConfig } from '@config';
+import { notDataDraft } from "@utils/collectionUtils";
+import { 
+  slugToKey, 
+  keyToSlug, 
+  getTaxonomyLabel,
+  getTaxonomyDescription 
+} from '@utils/taxonomyUtils';
+import { getLocaleByUrl } from '@i18n/utils';
 
 export async function getStaticPaths() {
-  const posts = await getCollection('posts', ({ data }) => {
-    return !data.draft;
+  // 获取所有文章
+  const posts = await getCollection('posts', notDataDraft);
+  
+  // 获取所有文章中实际使用的标签，并统计每个标签的文章数量
+  const tagPostsMap = new Map<string, any[]>();
+  
+  // 遍历所有文章，收集标签和对应的文章
+  posts.forEach(post => {
+    if (post.data.tags && post.data.tags.length > 0) {
+      post.data.tags.forEach(tag => {
+        if (!tagPostsMap.has(tag)) {
+          tagPostsMap.set(tag, []);
+        }
+        tagPostsMap.get(tag)!.push(post);
+      });
+    }
   });
   
-  // Get all unique tags
-  const tags = [...new Set(posts.flatMap(post => post.data.tags || []))];
+  // 只为有文章的标签生成静态路径
+  const paths = await Promise.all(
+    Array.from(tagPostsMap.entries()).map(async ([tagKey, tagPosts]) => {
+      // 为标签生成对应的 slug
+      const tagSlug = await keyToSlug('tags', tagKey);
+      
+      // 按发布时间排序文章
+      const sortedPosts = tagPosts.sort((a, b) => {
+        if (!a.data.publishTime) return 1;
+        if (!b.data.publishTime) return -1;
+        return b.data.publishTime.getTime() - a.data.publishTime.getTime();
+      });
+      
+      return {
+        params: { tag: tagSlug },
+        props: { 
+          tagKey,
+          tagSlug,
+          posts: sortedPosts,
+          count: sortedPosts.length
+        }
+      };
+    })
+  );
   
-  return tags.map(tag => {
-    // Filter posts by tag
-    const tagPosts = posts.filter(post => 
-      post.data.tags && post.data.tags.includes(tag)
-    ).sort((a, b) => {
-      return new Date(b.data.date || 0).getTime() - new Date(a.data.date || 0).getTime();
-    });
-    
-    return {
-      params: { tag: tag.toLowerCase() },
-      props: { 
-        tag,
-        posts: tagPosts,
-        count: tagPosts.length
-      }
-    };
-  });
+  return paths;
 }
 
-const { tag, posts, count } = Astro.props;
-const basePath = `/tags/${tag.toLowerCase()}`;
+const { seo: seoConfig } = siteConfig;
+
+const { tagKey, tagSlug, posts, count } = Astro.props;
+
+// Get current locale
+const currentLocale = getLocaleByUrl(Astro.url);
+
+// Get localized label and description
+const tagLabel = await getTaxonomyLabel('tags', tagKey, currentLocale);
+const tagDescription = await getTaxonomyDescription('tags', tagKey, currentLocale);
+
+const basePath = `/tags/${tagSlug}`;
 
 // Get pagination data for first page
 const { postsPerPage } = getPagination({ 
@@ -49,22 +87,31 @@ const paginatedPosts = posts.slice(0, postsPerPage);
 // Set noindex based on site config
 const noindex = seoConfig.noindex.includes("/tags") || seoConfig.noindex.includes("*");
 
-// Format the tag name for display
-const formattedTag = tag.charAt(0).toUpperCase() + tag.slice(1);
+// SEO meta data
+const pageTitle = currentLocale === 'en' ? `Tag: ${tagLabel}` : `标签：${tagLabel}`;
+const pageDescription = tagDescription || 
+  (currentLocale === 'en' 
+    ? `Browse all articles related to ${tagLabel}` 
+    : `浏览所有与 ${tagLabel} 相关的文章`);
 ---
 
 <Layout 
-  title={`标签：${formattedTag}`}
-  description={`浏览所有与 ${formattedTag} 相关的文章`}
+  title={pageTitle}
+  description={pageDescription}
   noindex={noindex}
 >
   <div class="w-full py-8">
     <header class="mb-10">
       <h1 class="text-3xl md:text-4xl font-bold text-gray-900 dark:text-white mb-4">
-        标签： #{formattedTag}
+        {`标签： #${tagLabel}`}
       </h1>
+      {tagDescription && (
+        <p class="text-lg text-gray-600 dark:text-gray-400 mb-4">
+          {tagDescription}
+        </p>
+      )}
       <p class="text-lg text-gray-700 dark:text-gray-300">
-        共 {count} 篇文章
+        {currentLocale === 'en' ? `${count} articles` : `共 ${count} 篇文章`}
       </p>
     </header>
     
@@ -76,7 +123,9 @@ const formattedTag = tag.charAt(0).toUpperCase() + tag.slice(1);
       </div>
     ) : (
       <div class="text-center py-12">
-        <p class="text-gray-600 dark:text-gray-400">No posts found with this tag.</p>
+        <p class="text-gray-600 dark:text-gray-400">
+          {currentLocale === 'en' ? 'No posts found with this tag.' : '没有找到相关文章。'}
+        </p>
       </div>
     )}
     

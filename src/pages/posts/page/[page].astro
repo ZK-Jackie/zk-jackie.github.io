@@ -3,21 +3,24 @@ import { getCollection } from 'astro:content';
 import Layout from '@layouts/Layout.astro';
 import PostCard from '@components/post/PostCard.astro';
 import Pagination from '@components/common/Pagination.astro';
+import { siteConfig } from '@config';
 import { getPagination } from '@utils/pagination';
-import { contentConfig } from '@config';
+import {notDataDraft} from "@utils/collectionUtils";
 
 export async function getStaticPaths() {
-  const posts = await getCollection('posts', ({ data }) => {
-    return !data.draft;
-  });
+  const {content: contentConfig} = siteConfig;
+  const posts = await getCollection('posts', notDataDraft);
   
   // Sort posts by date (newest first)
   const sortedPosts = posts.sort((a, b) => {
-    return new Date(b.data.date || 0).getTime() - new Date(a.data.date || 0).getTime();
+    if (!a.data.publishTime) return 1;
+    if (!b.data.publishTime) return -1;
+    return b.data.publishTime.getTime() - a.data.publishTime.getTime();
+
   });
   
   // Calculate total pages
-  const totalPages = Math.ceil(sortedPosts.length / contentConfig.postsPerPage);
+  const totalPages = Math.ceil(sortedPosts.length / (contentConfig.postsPerPage || 11));
   
   // Generate paths for each page
   return Array.from({ length: totalPages }).map((_, i) => {

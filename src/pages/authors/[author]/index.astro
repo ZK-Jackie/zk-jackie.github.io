@@ -5,46 +5,85 @@ import Layout from '@layouts/Layout.astro';
 import PostCard from '@components/post/PostCard.astro';
 import Pagination from '@components/common/Pagination.astro';
 import { getPagination } from '@utils/pagination';
-import { seoConfig } from '@config';
+import { siteConfig } from '@config';
+import { notDataDraft } from "@utils/collectionUtils";
+import { 
+  slugToKey, 
+  keyToSlug, 
+  getTaxonomyLabel,
+  getTaxonomyDescription 
+} from '@utils/taxonomyUtils';
+import { getLocaleByUrl } from '@i18n/utils';
+
+const { seo: seoConfig } = siteConfig;
 
 export async function getStaticPaths() {
-  const posts = await getCollection('posts', ({ data }) => {
-    return !data.draft;
+  // 获取所有文章
+  const posts = await getCollection('posts', notDataDraft);
+  
+  // 获取所有文章中实际使用的作者，并统计每个作者的文章数量
+  const authorPostsMap = new Map<string, any[]>();
+  
+  // 遍历所有文章，收集作者和对应的文章
+  posts.forEach(post => {
+    if (post.data.authors && post.data.authors.length > 0) {
+      post.data.authors.forEach(author => {
+        if (!authorPostsMap.has(author)) {
+          authorPostsMap.set(author, []);
+        }
+        authorPostsMap.get(author)!.push(post);
+      });
+    }
   });
   
-  // Get all author content
+  // 获取作者详情集合
   const authorEntries = await getCollection('authors');
   
-  // Get all unique authors
-  const authors = [...new Set(posts.flatMap(post => post.data.authors || []))];
+  // 只为有文章的作者生成静态路径
+  const paths = await Promise.all(
+    Array.from(authorPostsMap.entries()).map(async ([authorKey, authorPosts]) => {
+      // 为作者生成对应的 slug
+      const authorSlug = await keyToSlug('authors', authorKey);
+      
+      // 按发布时间排序文章
+      const sortedPosts = authorPosts.sort((a, b) => {
+        if (!a.data.publishTime) return 1;
+        if (!b.data.publishTime) return -1;
+        return b.data.publishTime.getTime() - a.data.publishTime.getTime();
+      });
+      
+      // Find author details if available (match by title or key)
+      const authorDetails = authorEntries.find(entry => 
+        entry.data.title.toLowerCase() === authorKey.toLowerCase() ||
+        entry.id.toLowerCase() === authorKey.toLowerCase()
+      );
+      
+      return {
+        params: { author: authorSlug },
+        props: { 
+          authorKey,
+          authorSlug,
+          authorDetails: authorDetails || null,
+          posts: sortedPosts,
+          count: sortedPosts.length
+        }
+      };
+    })
+  );
   
-  return authors.map(author => {
-    // Filter posts by author
-    const authorPosts = posts.filter(post => 
-      post.data.authors && post.data.authors.includes(author)
-    ).sort((a, b) => {
-      return new Date(b.data.date || 0).getTime() - new Date(a.data.date || 0).getTime();
-    });
-    
-    // Find author details if available
-    const authorDetails = authorEntries.find(entry => 
-      entry.data.title.toLowerCase() === author.toLowerCase()
-    );
-    
-    return {
-      params: { author: author.toLowerCase() },
-      props: { 
-        author,
-        authorDetails: authorDetails || null,
-        posts: authorPosts,
-        count: authorPosts.length
-      }
-    };
-  });
+  return paths;
 }
 
-const { author, authorDetails, posts, count } = Astro.props;
-const basePath = `/authors/${author.toLowerCase()}`;
+const { authorKey, authorSlug, authorDetails, posts, count } = Astro.props;
+
+// Get current locale
+const currentLocale = getLocaleByUrl(Astro.url);
+
+// Get localized label and description
+const authorLabel = await getTaxonomyLabel('authors', authorKey, currentLocale);
+const authorDescription = await getTaxonomyDescription('authors', authorKey, currentLocale);
+
+const basePath = `/authors/${authorSlug}`;
 
 // Get pagination data for first page
 const { postsPerPage } = getPagination({ 
@@ -59,24 +98,31 @@ const paginatedPosts = posts.slice(0, postsPerPage);
 // Set noindex based on site config
 const noindex = seoConfig.noindex.includes("/authors") || seoConfig.noindex.includes("*");
 
-// Format the author name for display
-const formattedAuthor = author.split(' ').map(word => 
-  word.charAt(0).toUpperCase() + word.slice(1).toLowerCase()
-).join(' ');
+// SEO meta data
+const pageTitle = currentLocale === 'en' ? `Author: ${authorLabel}` : `作者：${authorLabel}`;
+const pageDescription = authorDescription || 
+  (currentLocale === 'en' 
+    ? `Browse all articles by ${authorLabel}` 
+    : `浏览 ${authorLabel} 撰写的所有文章`);
 ---
 
 <Layout 
-  title={`作者：${formattedAuthor}`}
-  description={`浏览 ${formattedAuthor} 撰写的所有文章`}
+  title={pageTitle}
+  description={pageDescription}
   noindex={noindex}
 >
   <div class="w-full py-8">
     <header class="mb-10">
       <h1 class="text-3xl md:text-4xl font-bold text-gray-900 dark:text-white mb-4">
-        作者：{formattedAuthor}
+        {currentLocale === 'en' ? `Author: ${authorLabel}` : `作者：${authorLabel}`}
       </h1>
+      {authorDescription && (
+        <p class="text-lg text-gray-600 dark:text-gray-400 mb-4">
+          {authorDescription}
+        </p>
+      )}
       <p class="text-lg text-gray-700 dark:text-gray-300">
-        共 {count} 篇文章
+        {currentLocale === 'en' ? `${count} articles` : `共 ${count} 篇文章`}
       </p>
     </header>
     
@@ -137,7 +183,9 @@ const formattedAuthor = author.split(' ').map(word =>
       </div>
     ) : (
       <div class="text-center py-12">
-        <p class="text-gray-600 dark:text-gray-400">No posts found by this author.</p>
+        <p class="text-gray-600 dark:text-gray-400">
+          {currentLocale === 'en' ? 'No posts found by this author.' : '没有找到该作者的文章。'}
+        </p>
       </div>
     )}
     

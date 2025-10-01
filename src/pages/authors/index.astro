@@ -3,25 +3,32 @@ import { getCollection } from 'astro:content';
 import Layout from '@layouts/Layout.astro';
 import { Icon } from 'astro-icon/components';
 import Link from '@components/common/Link.astro';
+import { keyToSlug } from '@utils/taxonomyUtils';
+import { notDataDraft } from "@utils/collectionUtils";
 
 // Get all blog posts
-const posts = await getCollection('posts', ({ data }) => {
-  return !data.draft;
-});
+const posts = await getCollection('posts', notDataDraft);
 
 // Get all unique authors and count posts for each
 const authors = [...new Set(posts.flatMap(post => post.data.authors || []))];
-const authorCounts = authors.map(author => {
-  const count = posts.filter(post => 
-    post.data.authors && post.data.authors.includes(author)
-  ).length;
-  
-  return {
-    name: author,
-    count,
-    slug: author.toLowerCase()
-  };
-}).sort((a, b) => b.count - a.count); // Sort by post count (descending)
+const authorCounts = await Promise.all(
+  authors.map(async author => {
+    const count = posts.filter(post => 
+      post.data.authors && post.data.authors.includes(author)
+    ).length;
+    
+    const slug = await keyToSlug('authors', author);
+    
+    return {
+      name: author,
+      count,
+      slug
+    };
+  })
+);
+
+// Sort by post count (descending)
+authorCounts.sort((a, b) => b.count - a.count);
 
 // Format author names for display
 const formatAuthorName = (name: string) => {

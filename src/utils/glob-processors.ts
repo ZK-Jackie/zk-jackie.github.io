@@ -191,17 +191,13 @@ export const excerptProcessor: FileProcessor = {
 export const defaultProcessors = [
   autoCreateTimeProcessor,
   filePathProcessor,
-  gitStatsProcessor,
-  readingTimeProcessor,
-  excerptProcessor
+  gitStatsProcessor
 ];
 
 export const postsProcessors = [
   autoCreateTimeProcessor,
   filePathProcessor,
   gitStatsProcessor,
-  // categoryFromPathProcessor,
-  // tagsFromFileNameProcessor,
   readingTimeProcessor,
   excerptProcessor
 ];
@@ -210,8 +206,6 @@ export const fullProcessors = [
   fileStatsProcessor,
   autoCreateTimeProcessor,
   filePathProcessor,
-  // categoryFromPathProcessor,
-  // tagsFromFileNameProcessor,
   readingTimeProcessor,
   excerptProcessor
 ];

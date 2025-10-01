@@ -20,7 +20,7 @@ export function getReadingTime(text: string, wordsPerMinute: number = 300, codeR
   // Strip HTML tags if present
   const plainText = mainBody.replace(/<\/?[^>]+(>|$)/g, '');
 
-  // Identify code blocks (markdown code blocks with ``` or indented code)
+  // Identify code blocks (Markdown code blocks with ``` or indented code)
   const codeBlockRegex = /```[\s\S]*?```|`[^`]+`|\n( {4}|\t)[^\n]+/g;
   const codeBlocks = plainText.match(codeBlockRegex) || [];
 

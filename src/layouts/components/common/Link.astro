@@ -1,11 +1,15 @@
 ---
-import {getRoutePath} from "@utils/route";
+import {resolveUrl} from "@utils/pathUtils";
+import {envConfig} from "@config"
 interface LinkProps extends astroHTML.JSX.AnchorHTMLAttributes {
     href: string;
 }
 const {href, class: className, ...props} = Astro.props as LinkProps;
+
+const baseUrl = envConfig.public.PUBLIC_BASE_URL || '/';
+const currentUrl = Astro.url.pathname || '/';
 ---
-<a href={getRoutePath(href)}
+<a href={resolveUrl(href, baseUrl, currentUrl)}
    class={className}
    {...props}
 >

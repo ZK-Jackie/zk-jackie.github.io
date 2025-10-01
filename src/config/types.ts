@@ -1,7 +1,6 @@
-// Type definitions for the configuration
 export interface SiteConfig {
   // Basic site information
-  site: {
+  siteMetadata: {
     // site name, used in seo
     title: string;
     // site prologue or tagline
@@ -30,6 +29,16 @@ export interface SiteConfig {
     robots: RobotsRules[];
   };
 
+  // i18n settings
+  i18n: {
+    // Default locale, e.g., `"en"`
+    defaultLocale: string;
+    // Supported locales, e.g., `["en", "zh"]`
+    locales: string[];
+    // Show default locale in URL, e.g., default locale is `en`, `true` for `example.com/en/`, `false` for `example.com/`
+    showDefaultLang: boolean;
+  }
+
   // Content settings
   content: {
     // Number of posts per page on listing pages
@@ -40,16 +49,27 @@ export interface SiteConfig {
     tocMaxDepth: number;
   };
 
+  // Website Statistics settings
+  statistics: {
+    // Provider name, e.g., "CounterScale"
+    provider?: 'umami' | 'counterscale' | 'none';
+    // Is the statistics enabled
+    enabled: boolean;
+    // Traker script url, could be script from `public` folder or external url
+    trackerUrl?: string;
+    // JSON string of the configuration parameters for the provider
+    parameters?: string;
+
+    // Enable page views tracking and display
+    pageViewsEnabled?: boolean;
+    // Enable site visitors tracking and display
+    siteViewsEnabled?: boolean;
+  };
+
   // Features
   features: {
     // Enable RSS feed generation
     rss: boolean;
-    // Enable site statistics, CounterScale script will be added
-    statistics: boolean;
-    // Page statistics wound be seen in the head of blog posts, if this and `statistics` are enabled
-    pageStatistics: boolean;
-    // Site statistics will be seen in the footer, if this and `statistics` are enabled
-    siteStatistics: boolean;
     // Page share options, e.g., ["email", "qrcode"]
     pageShare: string[];
   };
@@ -107,20 +127,22 @@ export interface EnvConfig {
   cloudflare?: CloudflareEnvConfig; // Optional Cloudflare specific environment variables
 }
 
+// Parsed public environment variables, must start with `PUBLIC_`
 export interface PublicEnvConfig {
   PUBLIC_SITE_URL: string;
-  PUBLIC_ANALYTICS_ENABLED?: boolean; // Enable analytics if set to "true"
-  PUBLIC_ANALYTICS_ID?: string;
-  PUBLIC_ANALYTICS_COLLECT_URL?: string; // URL for analytics collection
-  PUBLIC_BASE_URL: string; // Base URL for the site, used in routing
+  // Base URL for the site, used in routing
+  PUBLIC_BASE_URL: string;
+  // Traker script url, could be script from `public` folder or external url
+  PUBLIC_STAT_TRACKER_URL?: string;
+  // JSON string of the configuration parameters for the provider
+  PUBLIC_STAT_PARAMS?: string;
+  // ICP registration number for Chinese sites
+  PUBLIC_LOCALE_ICP?: string;
 }
 
-export interface PrivateEnvConfig {
-}
+export interface PrivateEnvConfig {}
 
-export interface CloudflareEnvConfig {
-  // Add Cloudflare specific environment variables here if needed
-}
+export interface CloudflareEnvConfig {}
 
 
 export interface SocialLinks {

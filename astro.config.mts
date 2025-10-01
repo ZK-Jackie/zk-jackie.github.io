@@ -1,60 +1,41 @@
+import {loadEnv} from "vite";
 import {defineConfig} from 'astro/config';
 import tailwindcss from '@tailwindcss/vite';
-import mdx from '@astrojs/mdx';
-import icon from 'astro-icon';
-import sitemap from '@astrojs/sitemap';
-import remarkGemoji from "remark-gemoji";
-import { loadEnv } from "vite";
-import type {PublicEnvConfig} from "@config/types";
-import astroExpressiveCode from 'astro-expressive-code';
-import rehypeMermaid from "rehype-mermaid";
+import createPlugins from "./astro/plugins";
+import {initConfig} from "./src/config";
 
 /**
  * 配置项：https://docs.astro.build/zh-cn/reference/configuration-reference/
  * 环境变量：https://docs.astro.build/zh-cn/guides/environment-variables/
+ * Vite env 配置：https://cn.vite.dev/guide/env-and-mode.html
  */
-const publicConfig = loadEnv(import.meta.env.MODE as string, process.cwd(), "PUBLIC_") as unknown as PublicEnvConfig;
+const mode = process.env.MODE as RuntimeMode || 'development'
+const metaEnv = loadEnv(mode, process.cwd(), "PUBLIC_") as ImportMetaEnv
+const {env: envConfig, site: siteConfig} = initConfig(mode, metaEnv)
+const plugins = createPlugins(envConfig, siteConfig)
 
 export default defineConfig({
-  site: publicConfig.PUBLIC_SITE_URL,
-  base: publicConfig.PUBLIC_BASE_URL,
+  site: envConfig.public.PUBLIC_SITE_URL,
+  base: envConfig.public.PUBLIC_BASE_URL,
   trailingSlash: 'never',
+  i18n: {
+    locales: ["zh", "en"],
+    defaultLocale: "zh",
+    routing: "manual"
+  },
   markdown: {
     gfm: true,
-    remarkPlugins: [
-      remarkGemoji
-    ],
-    rehypePlugins: [
-      [rehypeMermaid, {dark: true, strategy: 'img-svg'}]
-    ]
+    remarkPlugins: plugins.markdown.remarkPlugins,
+    rehypePlugins: plugins.markdown.rehypePlugins,
   },
-  // Configure Astro integrations
-  integrations: [
-    astroExpressiveCode({
-      frames: {
-        showCopyToClipboardButton: true,
-      },
-      // 默认值为 true，但由于代码优化，true 或 false 都可以实现相同的效果
-      useDarkModeMediaQuery: false,
-      // 默认值为 ['github-light', 'github-dark']
-      // themes: ['github-light', 'github-dark'],
-      // 默认会从页面的 <html> 元素中读取 data-theme 属性来确定主题，https://expressive-code.com/reference/configuration/#themecssselector
-      // themeCssSelector: (theme) => `[data-theme="${theme.name}"]`
-    }),
-    mdx(),  // expressiveCode must go before mdx
-    icon(),
-    /*sitemap(),*/
-  ],
+  integrations: [plugins.integrations],
   vite: {
     plugins: [
       tailwindcss()
     ],
     server: {
       fs: {
-        allow: [
-          '.',
-          '../content'
-        ],
+        allow: ['.']
       },
     },
   }

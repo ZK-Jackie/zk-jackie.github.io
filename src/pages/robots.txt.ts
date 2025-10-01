@@ -1,4 +1,7 @@
-import { seoConfig } from '@config';
+import { siteConfig } from '@config';
+
+
+const {seo: seoConfig} = siteConfig;
 
 export async function GET(): Promise<Response> {
   const robotsConfig = seoConfig.robots

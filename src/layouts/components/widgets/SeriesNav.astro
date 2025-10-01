@@ -2,7 +2,7 @@
 import { getCollection } from 'astro:content';
 import Link from "../common/Link.astro";
 
-export interface Props {
+interface Props {
   currentSlug: string;
   seriesName: string;
   seriesPosition: string;
@@ -157,7 +157,7 @@ const nextPost = currentIndex < seriesPosts.length - 1 ? seriesPosts[currentInde
 
       if (tocToggle && tocContent) {
         // Set initial state
-        tocContent.classList.add(defaultExpanded ? 'series-nav-collapsed' : 'series-nav-expanded');
+        tocContent.classList.add(defaultCollapsed ? 'series-nav-collapsed' : 'series-nav-expanded');
 
         tocToggle.addEventListener('click', () => {
           // Toggle the class instead of manipulating styles directly

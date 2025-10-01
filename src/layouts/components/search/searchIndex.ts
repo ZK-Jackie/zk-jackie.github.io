@@ -1,5 +1,4 @@
-import { getCollection } from 'astro:content';
-import type {CollectionEntry} from "astro:content";
+import { type CollectionEntry, getCollection } from 'astro:content';
 import type { SearchItem } from './search.d.ts';
 import {notDataDraft} from "@utils/collectionUtils.ts";
 import {formatDate} from "@utils/dateUtils.ts";

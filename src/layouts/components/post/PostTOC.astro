@@ -1,8 +1,7 @@
 ---
 import type { MarkdownHeading } from "astro";
-import type { Heading } from "@utils/toc"
 import PostHeading from "./table-of-contents/PostHeading.astro";
-import {buildToc} from "@utils/toc";
+import { type Heading, buildToc } from "./table-of-contents/buildToc";
 
 interface Props {
   headings: MarkdownHeading[];

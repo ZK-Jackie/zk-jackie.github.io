@@ -2,9 +2,14 @@
 import { Icon } from 'astro-icon/components';
 import { Image } from 'astro:assets';
 import { getCollection } from 'astro:content';
-import { navigationConfig, socialConfig, siteConfig, localeConfig, featuresConfig } from "@config";
+import { siteConfig } from "@config";
 import Link from "./Link.astro";
 import Counter from "./Counter.astro";
+import { notDataDraft } from "@utils/collectionUtils";
+
+const {
+  navigation: navigationConfig, social: socialConfig, siteMetadata: siteMetadataConfig, locale: localeConfig, features: featuresConfig
+} = siteConfig;
 
 // Extract footer menu items
 const footerMenu = navigationConfig.footer || [];
@@ -14,14 +19,14 @@ const socialLinks = Object.entries(socialConfig)
   .filter(([_, url]) => url !== "")
   .map(([platform, url]) => ({ platform, url }));
   
-// Get recent posts for the footer
-const allPosts = await getCollection('posts', ({ data }) => {
-  return !data.draft;
-});
-
-// Sort posts by date (newest first) and get the latest 3
+// Get recent posts for the footer, sort posts by date (newest first) and get the latest 3
+const allPosts = await getCollection('posts', notDataDraft);
 const recentPosts = allPosts
-  .sort((a, b) => new Date(b.data.date || 0).getTime() - new Date(a.data.date || 0).getTime())
+  .sort((a, b) => {
+    if (!a.data.publishTime) return 1;
+    if (!b.data.publishTime) return -1;
+    return b.data.publishTime.getTime() - a.data.publishTime.getTime();
+  })
   .slice(0, 3);
 ---
 
@@ -31,21 +36,21 @@ const recentPosts = allPosts
         <div class="grid grid-cols-1 md:grid-cols-3 gap-8">
             <!-- Logo and Description -->
             <div class="flex flex-col space-y-4">
-                {siteConfig.logoType === 'image' ? (
+                {siteMetadataConfig.logoType === 'image' ? (
                     <Image
-                        src={siteConfig.logo}
-                        alt={siteConfig.title + ' Logo'}
-                        width={siteConfig.logoSize ? Number(siteConfig.logoSize[0]) : 240}
-                        height={siteConfig.logoSize ? Number(siteConfig.logoSize[1]) : 30}
+                        src={siteMetadataConfig.logo}
+                        alt={siteMetadataConfig.title + ' Logo'}
+                        width={siteMetadataConfig.logoSize ? Number(siteMetadataConfig.logoSize[0]) : 240}
+                        height={siteMetadataConfig.logoSize ? Number(siteMetadataConfig.logoSize[1]) : 30}
                         class="mr-2"
                     />
                     ) : (
-                    <span class="font-bold text-2xl">{siteConfig.title}</span>
+                    <span class="font-bold text-2xl">{siteMetadataConfig.title}</span>
                     )
                 }
                 <p class="text-gray-500 dark:text-gray-400 text-sm">
                     <!--Providing valuable resources and tutorials for web developers and tech enthusiasts.-->
-                  {siteConfig.description}
+                  {siteMetadataConfig.description}
                 </p>
                 <!-- Social Media Links -->
                 <div class="flex space-x-4 mt-4">
@@ -140,9 +145,9 @@ const recentPosts = allPosts
                 }
 
                 {   // 版权信息
-                    siteConfig.copyright ?
+                    siteMetadataConfig.copyright ?
                     <div>
-                        <p>{siteConfig.copyright}</p>
+                        <p>{siteMetadataConfig.copyright}</p>
                     </div> : null
                 }
             </div>

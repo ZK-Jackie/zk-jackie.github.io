@@ -1,0 +1,163 @@
+{
+  "title": "标签映射配置",
+  "description": "定义标签的URL slug和多语言显示",
+  "type": "tags",
+  "items": [
+    {
+      "key": "前端开发",
+      "slug": "frontend-development",
+      "labels": {
+        "zh": "前端开发",
+        "en": "Frontend Development"
+      },
+      "description": {
+        "zh": "前端开发相关技术和实践",
+        "en": "Frontend development technologies and practices"
+      }
+    },
+    {
+      "key": "后端开发",
+      "slug": "backend-development",
+      "labels": {
+        "zh": "后端开发",
+        "en": "Backend Development"
+      }
+    },
+    {
+      "key": "全栈开发",
+      "slug": "fullstack-development",
+      "labels": {
+        "zh": "全栈开发",
+        "en": "Fullstack Development"
+      }
+    },
+    {
+      "key": "人工智能",
+      "slug": "artificial-intelligence",
+      "labels": {
+        "zh": "人工智能",
+        "en": "Artificial Intelligence"
+      }
+    },
+    {
+      "key": "机器学习",
+      "slug": "machine-learning",
+      "labels": {
+        "zh": "机器学习",
+        "en": "Machine Learning"
+      }
+    },
+    {
+      "key": "数据科学",
+      "slug": "data-science",
+      "labels": {
+        "zh": "数据科学",
+        "en": "Data Science"
+      }
+    },
+    {
+      "key": "云计算",
+      "slug": "cloud-computing",
+      "labels": {
+        "zh": "云计算",
+        "en": "Cloud Computing"
+      }
+    },
+    {
+      "key": "网络安全",
+      "slug": "cybersecurity",
+      "labels": {
+        "zh": "网络安全",
+        "en": "Cybersecurity"
+      }
+    },
+    {
+      "key": "移动开发",
+      "slug": "mobile-development",
+      "labels": {
+        "zh": "移动开发",
+        "en": "Mobile Development"
+      }
+    },
+    {
+      "key": "其他",
+      "slug": "other",
+      "labels": {
+        "zh": "其他",
+        "en": "Other"
+      }
+    },
+    {
+      "key": "Neo4j",
+      "slug": "neo4j",
+      "labels": {
+        "zh": "Neo4j",
+        "en": "Neo4j"
+      },
+      "description": {
+        "zh": "Neo4j图数据库相关技术",
+        "en": "Neo4j graph database technologies"
+      }
+    },
+    {
+      "key": "Nginx",
+      "slug": "nginx", 
+      "labels": {
+        "zh": "Nginx",
+        "en": "Nginx"
+      },
+      "description": {
+        "zh": "Nginx服务器相关技术",
+        "en": "Nginx server technologies"
+      }
+    },
+    {
+      "key": "Redis",
+      "slug": "Redis",
+      "labels": {
+        "zh": "Redis",
+        "en": "Redis"
+      },
+      "description": {
+        "zh": "Redis缓存数据库技术",
+        "en": "Redis caching database technologies"
+      }
+    },
+    {
+      "key": "前端",
+      "slug": "frontend",
+      "labels": {
+        "zh": "前端",
+        "en": "Frontend"
+      },
+      "description": {
+        "zh": "前端开发技术",
+        "en": "Frontend development technologies"
+      }
+    },
+    {
+      "key": "缓存",
+      "slug": "caching",
+      "labels": {
+        "zh": "缓存",
+        "en": "Caching"
+      },
+      "description": {
+        "zh": "缓存技术和策略",
+        "en": "Caching technologies and strategies"
+      }
+    },
+    {
+      "key": "图数据库",
+      "slug": "graph-database",
+      "labels": {
+        "zh": "图数据库",
+        "en": "Graph Database"
+      },
+      "description": {
+        "zh": "图数据库相关技术",
+        "en": "Graph database related technologies"
+      }
+    }
+  ]
+}

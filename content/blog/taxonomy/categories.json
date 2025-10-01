@@ -1,0 +1,91 @@
+{
+  "title": "分类映射配置",
+  "description": "定义分类的URL slug和多语言显示",
+  "type": "categories",
+  "items": [
+    {
+      "key": "技术教程",
+      "slug": "tutorials",
+      "labels": {
+        "zh": "技术教程",
+        "en": "Tutorials"
+      },
+      "description": {
+        "zh": "详细的技术教程和指南",
+        "en": "Detailed technical tutorials and guides"
+      }
+    },
+    {
+      "key": "项目实战",
+      "slug": "projects",
+      "labels": {
+        "zh": "项目实战",
+        "en": "Projects"
+      }
+    },
+    {
+      "key": "技术分享",
+      "slug": "tech-sharing",
+      "labels": {
+        "zh": "技术分享",
+        "en": "Tech Sharing"
+      }
+    },
+    {
+      "key": "学习笔记",
+      "slug": "learning-notes",
+      "labels": {
+        "zh": "学习笔记",
+        "en": "Learning Notes"
+      }
+    },
+    {
+      "key": "工具推荐",
+      "slug": "tools",
+      "labels": {
+        "zh": "工具推荐",
+        "en": "Tools"
+      }
+    },
+    {
+      "key": "行业动态",
+      "slug": "industry-news",
+      "labels": {
+        "zh": "行业动态",
+        "en": "Industry News"
+      }
+    },
+    {
+      "key": "Web 开发",
+      "slug": "web-development",
+      "labels": {
+        "zh": "Web 开发",
+        "en": "Web Development"
+      },
+      "description": {
+        "zh": "Web开发相关技术和实践",
+        "en": "Web development technologies and practices"
+      }
+    },
+    {
+      "key": "编程语言",
+      "slug": "programming-languages",
+      "labels": {
+        "zh": "编程语言",
+        "en": "Programming Languages"
+      },
+      "description": {
+        "zh": "各种编程语言学习和应用",
+        "en": "Learning and application of various programming languages"
+      }
+    },
+    {
+      "key": "其他",
+      "slug": "other",
+      "labels": {
+        "zh": "其他",
+        "en": "Other"
+      }
+    }
+  ]
+}

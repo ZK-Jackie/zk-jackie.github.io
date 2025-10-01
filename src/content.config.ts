@@ -39,7 +39,7 @@ const postsCollection = defineCollection({
       // 文章系列，第一个元素为系列名称，第二个元素为序号，允许自定义
       series: z.tuple([z.string(), z.string()]).optional(),
       // 文章原始链接，允许自定义
-      canonical: z.string().optional(),
+      canonical: z.string().url().optional(),
       // 是否为草稿，默认 false，草稿将不会出现在文章列表中且不会被生成页面
       draft: z.boolean().optional().default(false),
 
@@ -175,11 +175,48 @@ const aboutCollection = defineCollection({
     }),
 });
 
+// Taxonomy collection schema
+const taxonomyCollection = defineCollection({
+  loader: enhancedGlob({
+    pattern: '*.json',
+    base: './content/blog/taxonomy',
+    processors: []
+  }),
+  schema: z.object({
+    // 配置标题
+    title: z.string(),
+    // 配置描述
+    description: z.string().optional(),
+    // 分类法类型
+    type: z.enum(['tags', 'categories', 'authors']),
+    // 映射项目
+    items: z.array(
+      z.object({
+        // 原始键值（frontmatter中使用的）
+        key: z.string(),
+        // URL slug（英文路径段）
+        slug: z.string(),
+        // 多语言标签
+        labels: z.object({
+          zh: z.string(),
+          en: z.string()
+        }),
+        // 可选描述
+        description: z.object({
+          zh: z.string().optional(),
+          en: z.string().optional()
+        }).optional()
+      })
+    )
+  })
+});
+
 
 // Export collections
 export const collections = {
   posts: postsCollection,
   pages: pagesCollection,
   authors: authorsCollection,
-  about: aboutCollection
+  about: aboutCollection,
+  taxonomy: taxonomyCollection
 };

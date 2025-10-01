@@ -1,5 +1,5 @@
 import type { SearchItem, SearchResult } from './search.d.ts';
-import { getRoutePath } from '@utils/route';
+import { resolveUrl } from '@utils/pathUtils';
 
 export class SearchResultRenderer {
   private searchResults: HTMLElement;
@@ -123,7 +123,7 @@ export class SearchResultRenderer {
       tagsHtml = `
         <div class="flex flex-wrap gap-2 mt-3">
           ${post.tags.slice(0, 3).map((tag: string) => `
-            <a href="${getRoutePath(`/tags/${tag.toLowerCase()}/`)}" class="px-2 py-1 bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 rounded-full text-xs hover:bg-blue-100 dark:hover:bg-blue-900 transition-colors duration-300">
+            <a href="${resolveUrl(`/tags/${tag.toLowerCase()}/`)}" class="px-2 py-1 bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 rounded-full text-xs hover:bg-blue-100 dark:hover:bg-blue-900 transition-colors duration-300">
               #${tag}
             </a>
           `).join('')}
@@ -133,7 +133,7 @@ export class SearchResultRenderer {
 
     // 组装结果
     article.innerHTML = `
-      <a href="${getRoutePath(`/posts/${post.slug}`)}" class="block">
+      <a href="${resolveUrl(`/posts/${post.slug}`)}" class="block">
         ${imageHtml}
         <div class="p-4">
           <div class="flex flex-wrap items-center text-xs text-gray-500 dark:text-gray-400 mb-3">

@@ -1,9 +1,13 @@
-// i18n configuration
+export const commonLanguages = [
+  'zh', 'en', 'fr', 'de', 'es', 'ja', 'ru', 'it', 'pt', 'ko'
+]
+
 export const languages = {
   zh: '中文',
   en: 'English',
 };
 
+export const showDefaultLang = false;
 export const defaultLang = 'zh';
 
 export const ui = {

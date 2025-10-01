@@ -4,59 +4,98 @@ import Layout from '@layouts/Layout.astro';
 import PostCard from '@components/post/PostCard.astro';
 import Pagination from '@components/common/Pagination.astro';
 import { getPagination } from '@utils/pagination';
-import { contentConfig, seoConfig } from '@config';
+import { siteConfig } from '@config';
+import { notDataDraft } from '@utils/collectionUtils';
+import { 
+  getAllTaxonomySlugs, 
+  slugToKey, 
+  keyToSlug, 
+  getTaxonomyLabel,
+  getTaxonomyDescription 
+} from '@utils/taxonomyUtils';
+import { getLocaleByUrl } from '@i18n/utils';
+
 
 export async function getStaticPaths() {
-  const posts = await getCollection('posts', ({ data }) => {
-    return !data.draft;
-  });
+  const { content: contentConfig } = siteConfig;
+  const posts = await getCollection('posts', notDataDraft);
   
-  // Get all unique authors
-  const authors = [...new Set(posts.flatMap(post => post.data.authors || []))];
+  // 获取所有文章中实际使用的作者，并统计每个作者的文章数量
+  const authorPostsMap = new Map<string, any[]>();
+  
+  // 遍历所有文章，收集作者和对应的文章
+  posts.forEach(post => {
+    if (post.data.authors && post.data.authors.length > 0) {
+      post.data.authors.forEach(author => {
+        if (!authorPostsMap.has(author)) {
+          authorPostsMap.set(author, []);
+        }
+        authorPostsMap.get(author)!.push(post);
+      });
+    }
+  });
   
   // Create paths for each author and its pages
-  return authors.flatMap(author => {
-    // Filter posts by author
-    const authorPosts = posts.filter(post => 
-      post.data.authors && post.data.authors.includes(author)
-    ).sort((a, b) => {
-      return new Date(b.data.date || 0).getTime() - new Date(a.data.date || 0).getTime();
-    });
-    
-    // Generate pages for this author
-    const totalPages = Math.ceil(authorPosts.length / contentConfig.postsPerPage);
-    
-    return Array.from({ length: totalPages }).map((_, i) => {
-      const page = i + 1;
-      // Skip page 1 as it's handled by the index.astro
-      if (page === 1) return null;
+  const paths = await Promise.all(
+    Array.from(authorPostsMap.entries()).map(async ([authorKey, authorPosts]) => {
+      // 为作者生成对应的 slug
+      const authorSlug = await keyToSlug('authors', authorKey);
       
-      return {
-        params: { 
-          author: author.toLowerCase(),
-          page: page.toString()
-        },
-        props: { 
-          author,
-          posts: authorPosts,
-          page,
-          count: authorPosts.length
-        }
-      };
-    }).filter(Boolean); // Remove null entries
-  });
+      // 按发布时间排序文章
+      const sortedPosts = authorPosts.sort((a, b) => {
+        if (!a.data.publishTime) return 1;
+        if (!b.data.publishTime) return -1;
+        return b.data.publishTime.getTime() - a.data.publishTime.getTime();
+      });
+      
+      // Generate pages for this author
+      const totalPages = Math.ceil(sortedPosts.length / (contentConfig.postsPerPage || 11));
+      
+      return Array.from({ length: totalPages }).map((_, i) => {
+        const page = i + 1;
+        // Skip page 1 as it's handled by the index.astro
+        if (page === 1) return null;
+        
+        return {
+          params: { 
+            author: authorSlug,
+            page: page.toString()
+          },
+          props: { 
+            authorKey,
+            authorSlug,
+            posts: sortedPosts,
+            page,
+            count: sortedPosts.length
+          }
+        };
+      }).filter(Boolean); // Remove null entries
+    })
+  );
+  
+  return paths.flat();
 }
 
 interface Props { 
-  author: string;
+  authorKey: string;
+  authorSlug: string;
   posts: Array<any>;
   page: string;
   count: number;
 }
 
-const { author, posts, page, count } = Astro.props;
+const { seo: seoConfig } = siteConfig;
+const { authorKey, authorSlug, posts, page, count } = Astro.props;
+
+// Get current locale
+const currentLocale = getLocaleByUrl(Astro.url);
+
+// Get localized label and description
+const authorLabel = await getTaxonomyLabel('authors', authorKey, currentLocale);
+const authorDescription = await getTaxonomyDescription('authors', authorKey, currentLocale);
+
 const currentPage = parseInt(page);
-const basePath = `/authors/${author.toLowerCase()}`;
+const basePath = `/authors/${authorSlug}`;
 
 // Get pagination data
 const { startIndex, endIndex, prevUrl, nextUrl, totalPages } = getPagination({ 
@@ -69,23 +108,22 @@ const { startIndex, endIndex, prevUrl, nextUrl, totalPages } = getPagination({
 const paginatedPosts = posts.slice(startIndex, endIndex);
 
 // Set noindex based on site config
-const noindex = seoConfig.noindex.includes("/authors") || seoConfig.noindex.includes("*")
+const noindex = seoConfig?.noindex?.includes("/authors") || seoConfig?.noindex?.includes("*") || false;
 
-// Format the author name for display
-const formattedAuthor = author.split(' ').map(word => 
-  word.charAt(0).toUpperCase() + word.slice(1).toLowerCase()
-).join(' ');
+// Page title and description
+const pageTitle = `${authorLabel} - 第${currentPage}页`;
+const pageDescription = authorDescription || `查看${authorLabel}写的文章 - 第${currentPage}页`;
 ---
 
 <Layout
-  title={`作者：${formattedAuthor} - 第${page}页`}
-  description={`查看${formattedAuthor}写的文章 - 第${page}页`}
+  title={pageTitle}
+  description={pageDescription}
   noindex={noindex}
 >
   <div class="w-full py-8">
     <header class="mb-10">
       <h1 class="text-3xl md:text-4xl font-bold text-gray-900 dark:text-white mb-4">
-        作者：{formattedAuthor}
+        作者：{authorLabel}
       </h1>
       <p class="text-lg text-gray-700 dark:text-gray-300">
         第 {page} 页，共 {totalPages} 页 - 共 {count} 篇文章

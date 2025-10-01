@@ -1,8 +1,8 @@
 ---
-import { siteConfig, seoConfig, featuresConfig } from '@config';
+import { siteConfig } from '@config';
 import picomatch from "picomatch";
 
-export interface Props {
+interface Props {
   title?: string;
   description?: string;
   image?: string;
@@ -30,9 +30,10 @@ export interface Props {
   };
 }
 
+const { seo: seoConfig, features: featuresConfig, siteMetadata: siteMetadataConfig } = siteConfig;
 const {
-  title = siteConfig.title, // Updated from siteConfig.name
-  description = siteConfig.description,
+  title = siteMetadataConfig.title, // Updated from siteConfig.name
+  description = siteMetadataConfig.description,
   image = seoConfig.ogImage, // Updated from siteConfig.defaultImage
   article = false,
   noindex = false, // 如果是开发模式，默认noindex
@@ -62,9 +63,6 @@ if (!shouldNoindex) {
 const publishISODate = publishDate ? new Date(publishDate).toISOString() : null;
 const modifiedISODate = modifiedDate ? new Date(modifiedDate).toISOString() : publishISODate;
 
-// Prepare schema.org JSON-LD
-let schema = null;
-
 // Safe URL creation function
 const safeUrl = (path: string, base: URL | undefined) => {
   // Astro.site should be defined as per astro.config.mjs.
@@ -82,9 +80,9 @@ const safeUrl = (path: string, base: URL | undefined) => {
 const websiteSchema = {
   "@context": "https://schema.org",
   "@type": "WebSite",
-  "name": siteConfig.title, // Updated from siteConfig.name
+  "name": siteMetadataConfig.title, // Updated from siteConfig.name
   "url": Astro.site ? Astro.site.toString() : '', // Use Astro.site, fallback to empty if undefined
-  "description": siteConfig.description,
+  "description": siteMetadataConfig.description,
   "potentialAction": {
     "@type": "SearchAction",
     "target": {
@@ -121,7 +119,8 @@ const videoSchema = Astro.props.video ? {
   "embedUrl": Astro.props.video.src
 } : null;
 
-// Article schema (for blog posts)
+// Article schema for blog posts, using chema.org JSON-LD
+let schema;
 if (article && publishISODate) {
   schema = {
     "@context": "https://schema.org",
@@ -138,7 +137,7 @@ if (article && publishISODate) {
     } : null,
     "publisher": {
       "@type": "Organization",
-      "name": siteConfig.title, // Updated from siteConfig.name
+      "name": siteMetadataConfig.title, // Updated from siteConfig.name
       "logo": {
         "@type": "ImageObject",
         "url": safeUrl("/favicon.svg", Astro.site) // Use Astro.site
@@ -170,7 +169,7 @@ try {
 
 <!-- SEO Meta Tags -->
 <title>
-  {title || siteConfig.title}
+  {title || siteMetadataConfig.title}
 </title>
 <meta name="description" content={description} />
 <link rel="canonical" href={canonicalURL} />
@@ -226,7 +225,7 @@ try {
 
 <!-- RSS Feed -->
 {rssEnabled &&
-  <link rel="alternate" type="application/rss+xml" title={`${siteConfig.title} RSS Feed`} href="/rss.xml" />
+  <link rel="alternate" type="application/rss+xml" title={`${siteMetadataConfig.title} RSS Feed`} href="/rss.xml" />
 }
 <!-- Schema.org JSON-LD -->
 <script type="application/ld+json" set:html={JSON.stringify(schema)} />

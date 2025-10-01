@@ -2,25 +2,35 @@
 import { getCollection } from 'astro:content';
 import Layout from '@layouts/Layout.astro';
 import Link from '@components/common/Link.astro';
+import { keyToSlug } from '@utils/taxonomyUtils';
+import {notDataDraft} from "@utils/collectionUtils";
+import {isAlpha} from "@utils/stringUtils";
 
-// Get all blog posts
-const posts = await getCollection('posts', ({ data }) => {
-  return !data.draft;
-});
+// 获取所有文章
+const posts = await getCollection('posts', notDataDraft);
 
-// Get all unique tags and count posts for each
-const tags = [...new Set(posts.flatMap(post => post.data.tags || []))];
-const tagCounts = tags.map(tag => {
-  const count = posts.filter(post => 
-    post.data.tags && post.data.tags.includes(tag)
-  ).length;
-  
-  return {
-    name: tag,
-    count,
-    slug: tag.toLowerCase()
-  };
-}).sort((a, b) => b.count - a.count); // Sort by post count (descending)
+// 获取所有文章中存在的标签集合
+const allPostTags = [...new Set(posts.flatMap(post => post.data.tags || []))];
+
+
+const tagCounts = await Promise.all(
+  allPostTags.map(async postTag => {
+    const count = posts.filter(post => 
+      post.data.tags && post.data.tags.includes(postTag)
+    ).length;
+    
+    const slug = await keyToSlug('tags', postTag);
+    
+    return {
+      name: postTag,
+      count,
+      slug
+    };
+  })
+);
+
+// Sort by post count (descending)
+tagCounts.sort((a, b) => b.count - a.count);
 ---
 
 <Layout 
@@ -43,7 +53,7 @@ const tagCounts = tags.map(tag => {
               class="flex items-center gap-2 px-4 py-2 bg-white dark:bg-gray-800 rounded-full shadow-sm hover:shadow-md transition-shadow border border-gray-200 dark:border-gray-700"
         >
           <span class="font-medium text-gray-900 dark:text-white">
-            #{name.charAt(0).toUpperCase() + name.slice(1)}
+            #{name}
           </span>
           <span class="bg-blue-100 dark:bg-blue-900 text-blue-800 dark:text-blue-200 text-xs font-medium px-2.5 py-0.5 rounded-full">
             {count}

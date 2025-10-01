@@ -4,59 +4,102 @@ import Layout from '@layouts/Layout.astro';
 import PostCard from '@components/post/PostCard.astro';
 import Pagination from '@components/common/Pagination.astro';
 import { getPagination } from '@utils/pagination';
-import { contentConfig, seoConfig } from '@config';
+import { siteConfig } from '@config';
+import { 
+  getAllTaxonomySlugs, 
+  slugToKey, 
+  keyToSlug, 
+  getTaxonomyLabel,
+  getTaxonomyDescription 
+} from '@utils/taxonomyUtils';
+import { getLocaleByUrl } from '@i18n/utils';
+
 
 export async function getStaticPaths() {
+  const { content: contentConfig } = siteConfig;
   const posts = await getCollection('posts', ({ data }) => {
     return !data.draft;
   });
   
-  // Get all unique categories
-  const categories = [...new Set(posts.flatMap(post => post.data.categories || []))];
+  // Get all unique categories from posts
+  const allPostCategories = [...new Set(posts.flatMap(post => post.data.categories || []))];
+  
+  // Get configured category slugs
+  const configuredSlugs = await getAllTaxonomySlugs('categories');
+  
+  // Create slugs for all categories (configured + unconfigured)
+  const unconfiguredSlugs = await Promise.all(
+    allPostCategories.map(category => keyToSlug('categories', category))
+  );
+  
+  const allSlugs = new Set([
+    ...configuredSlugs,
+    ...unconfiguredSlugs
+  ]);
   
   // Create paths for each category and its pages
-  return categories.flatMap(category => {
-    // Filter posts by category
-    const categoryPosts = posts.filter(post => 
-      post.data.categories && post.data.categories.includes(category)
-    ).sort((a, b) => {
-      return new Date(b.data.date || 0).getTime() - new Date(a.data.date || 0).getTime();
-    });
+  const paths = await Promise.all(
+    Array.from(allSlugs).map(async slug => {
+      // Convert slug back to original key for filtering
+      const categoryKey = await slugToKey('categories', slug);
     
-    // Generate pages for this category
-    const totalPages = Math.ceil(categoryPosts.length / contentConfig.postsPerPage);
-
-    return Array.from({ length: totalPages }).map((_, i) => {
-      const page = i + 1;
-      // Skip page 1 as it's handled by the index.astro
-      if (page === 1) return null;
+      // Filter posts by the original category key
+      const categoryPosts = posts.filter(post => 
+        post.data.categories && post.data.categories.includes(categoryKey)
+      ).sort((a, b) => {
+        if (!a.data.publishTime) return 1;
+        if (!b.data.publishTime) return -1;
+        return b.data.publishTime.getTime() - a.data.publishTime.getTime();
+      });
       
-      return {
-        params: { 
-          category: category.toLowerCase(),
-          page: page.toString()
-        },
-        props: { 
-          category,
-          posts: categoryPosts,
-          page,
-          count: categoryPosts.length
-        }
-      };
-    }).filter(Boolean); // Remove null entries
-  });
+      // Generate pages for this category
+      const totalPages = Math.ceil(categoryPosts.length / (contentConfig.postsPerPage || 11));
+      
+      return Array.from({ length: totalPages }).map((_, i) => {
+        const page = i + 1;
+        // Skip page 1 as it's handled by the index.astro
+        if (page === 1) return null;
+        
+        return {
+          params: { 
+            category: slug,
+            page: page.toString()
+          },
+          props: { 
+            categoryKey,
+            categorySlug: slug,
+            posts: categoryPosts,
+            page,
+            count: categoryPosts.length
+          }
+        };
+      }).filter(Boolean); // Remove null entries
+    })
+  );
+  
+  return paths.flat();
 }
 
 interface Props { 
-  category: string;
+  categoryKey: string;
+  categorySlug: string;
   posts: Array<any>;
   page: number;
   count: number;
 }
 
-const { category, posts, page, count } = Astro.props;
+const { categoryKey, categorySlug, posts, page, count } = Astro.props;
+const { seo: seoConfig } = siteConfig;
+
+// Get current locale
+const currentLocale = getLocaleByUrl(Astro.url);
+
+// Get localized label and description
+const categoryLabel = await getTaxonomyLabel('categories', categoryKey, currentLocale);
+const categoryDescription = await getTaxonomyDescription('categories', categoryKey, currentLocale);
+
 const currentPage = page;
-const basePath = `/categories/${category.toLowerCase()}`;
+const basePath = `/categories/${categorySlug}`;
 
 // Get pagination data
 const { startIndex, endIndex, prevUrl, nextUrl, totalPages } = getPagination({ 
@@ -69,21 +112,22 @@ const { startIndex, endIndex, prevUrl, nextUrl, totalPages } = getPagination({
 const paginatedPosts = posts.slice(startIndex, endIndex);
 
 // Set noindex based on site config
-const noindex = seoConfig.noindex.includes("/categories") || seoConfig.noindex.includes("*");
+const noindex = seoConfig?.noindex?.includes("/categories") || seoConfig?.noindex?.includes("*") || false;
 
-// Format the category name for display
-const formattedCategory = category.charAt(0).toUpperCase() + category.slice(1);
+// Page title and description
+const pageTitle = `${categoryLabel} - 第${currentPage}页`;
+const pageDescription = categoryDescription || `查看"${categoryLabel}"分类下的文章 - 第${currentPage}页`;
 ---
 
 <Layout 
-  title={`类别：${formattedCategory} - 第${currentPage}页`}
-  description={`查看"${formattedCategory}"分类下的文章 - 第${currentPage}页`}
+  title={pageTitle}
+  description={pageDescription}
   noindex={noindex}
 >
   <div class="w-full py-8">
     <header class="mb-10">
       <h1 class="text-3xl md:text-4xl font-bold text-gray-900 dark:text-white mb-4">
-        分类：{formattedCategory}
+        分类：{categoryLabel}
       </h1>
       <p class="text-lg text-gray-700 dark:text-gray-300">
         第 {currentPage} 页，共 {totalPages} 页 - 共 {count} 篇文章

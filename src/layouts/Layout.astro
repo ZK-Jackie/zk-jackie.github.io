@@ -3,7 +3,8 @@ import "@styles/global.css";
 import Header from "@components/common/Header.astro";
 import Footer from "@components/common/Footer.astro";
 import SEO from "@components/common/SEO.astro";
-import { siteConfig, envConfig, seoConfig, featuresConfig } from '@config';
+import { siteConfig } from '@config';
+import {createStatisticInstance} from "../plugins/statistic";
 
 interface Props {
   title?: string;
@@ -23,14 +24,18 @@ interface Props {
   tags?: string[];
   categories?: string[];
 }
+const { siteMetadata: siteMetadataConfig, seo: seoConfig, statistics } = siteConfig;
+let statisticUtil = null;
+if (statistics && statistics.enabled){
+  statisticUtil = createStatisticInstance(statistics)
+}
 
-const appId = featuresConfig.statistics ? envConfig.public?.PUBLIC_ANALYTICS_ID : null;
-const reportUrl = featuresConfig.statistics ? envConfig.public?.PUBLIC_ANALYTICS_COLLECT_URL : null;
+const currentHash = Astro.url.hash || null;
 
 const { 
-  title = siteConfig.title,
+  title = siteMetadataConfig.title,
   withSiteName = true,
-  description = siteConfig.description,
+  description = siteMetadataConfig.description,
   image = seoConfig.ogImage,
   noindex = false,
   wideContent = false,
@@ -97,13 +102,8 @@ const {
     <link rel="manifest" href="/site.webmanifest">
 
     <!-- CounterScale Analytics 若不开启，appId 将为 null -->
-    {appId && reportUrl && (
-      <script id="counterscale-script"
-              src="/lib/tracker.min.js"
-              data-site-id={appId}
-              data-reporter-url={reportUrl}
-              async
-      />
+    {currentHash && statisticUtil && (
+      <Fragment set:html={statisticUtil.getScriptHtml} />
     )}
 
     <meta name="generator" content={Astro.generator} />
@@ -165,7 +165,7 @@ const {
     
     <!-- SEO Component -->
     <SEO
-      title={`${title}${withSiteName ? ` - ${siteConfig.title}` : ''}`}
+      title={`${title}${withSiteName ? ` - ${title}` : ''}`}
       description={description}
       image={image}
       article={article}

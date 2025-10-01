@@ -2,13 +2,11 @@
 import { Icon } from 'astro-icon/components';
 import Link from "../common/Link.astro";
 
-export interface Props {
+interface Props {
 	// New prop names
 	text?: string;
 	link?: string;
 	// Legacy prop names (for backward compatibility)
-	label?: string;
-	url?: string;
 	variant?: 'solid' | 'outline';
 	color?: 'blue' | 'green' | 'red' | 'purple' | 'gray';
 	size?: 'xs' | 'sm' | 'md' | 'lg' | 'xl';
@@ -23,9 +21,7 @@ export interface Props {
 const { 
 	// Use new prop names with fallback to legacy props
 	text, 
-	link, 
-	label, 
-	url, 
+	link,
 	variant = 'solid', 
 	color = 'blue',
 	size = 'md',
@@ -37,8 +33,8 @@ const {
 } = Astro.props;
 
 // Use new props if available, otherwise fall back to legacy props
-const buttonText = text || label || '';
-const buttonLink = link || url || '#';
+const buttonText = text || '';
+const buttonLink = link || '#';
 
 // Determine if we need to show accessible text for icon-only buttons
 const hasIcon = !!icon;

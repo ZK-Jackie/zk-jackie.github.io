@@ -1,12 +1,15 @@
 import rss from '@astrojs/rss';
 import { getCollection } from 'astro:content';
-import { siteConfig, featuresConfig } from '@config';
+import { siteConfig } from '@config';
 import type {APIContext} from "astro";
 
+
 export async function GET(context: APIContext ): Promise<Response> {
+  const { features: featuresConfig, siteMetadata: siteMetadataConfig } = siteConfig;
   if (!featuresConfig.rss) {
     return new Response(null);
   }
+
   const posts = await getCollection('posts');
 
   // Sort posts by publish date (newest first)
@@ -17,8 +20,8 @@ export async function GET(context: APIContext ): Promise<Response> {
   });
 
   return rss({
-    title: siteConfig.title, // Updated from siteConfig.name
-    description: siteConfig.description,
+    title: siteMetadataConfig.title, // Updated from siteConfig.name
+    description: siteMetadataConfig.description,
     site: context?.site ? context.site.toString() : '', // Use context.site, fallback to empty if undefined
     items: sortedPosts.map((post) => ({
       title: post.data.title,

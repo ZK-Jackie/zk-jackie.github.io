@@ -1,5 +1,7 @@
 import type {MarkdownHeading} from "astro";
-import {contentConfig} from "@config";
+import {siteConfig} from "@config";
+
+const {tocMaxDepth} = siteConfig.content;
 
 export type Heading = {
   subheadings: Heading[];
@@ -12,7 +14,7 @@ export function buildToc(headings: MarkdownHeading[]) {
   const toc: Heading[] = [];
   const parentHeadings = new Map();
   headings
-    .filter((h) => h.depth <= contentConfig.tocMaxDepth) // 最大深度限制由配置文件控制
+    .filter((h) => h.depth <= tocMaxDepth) // 最大深度限制由配置文件控制
     .forEach((h) => {
       const heading: Heading = { ...h, subheadings: [] }; // 对每一个 h 都加上一个 subheadings 数组
       parentHeadings.set(heading.depth, heading);         // 设置当前标题为其深度的父级标题
