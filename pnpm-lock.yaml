@@ -26,6 +26,9 @@ importers:
       '@iconify-json/mdi':
         specifier: ^1.2.3
         version: 1.2.3
+      '@tailwindcss/typography':
+        specifier: ^0.5.16
+        version: 0.5.19(tailwindcss@4.1.13)
       '@tailwindcss/vite':
         specifier: ^4.1.7
         version: 4.1.13(vite@6.3.6(@types/node@24.5.2)(jiti@2.6.0)(lightningcss@1.30.1)(terser@5.44.0)(yaml@2.8.1))
@@ -33,7 +36,7 @@ importers:
         specifier: ^3.0.4
         version: 3.0.4
       astro:
-        specifier: ^5.13.10
+        specifier: 5.14.1
         version: 5.14.1(@types/node@24.5.2)(jiti@2.6.0)(lightningcss@1.30.1)(rollup@4.52.3)(terser@5.44.0)(typescript@5.9.2)(yaml@2.8.1)
       astro-expressive-code:
         specifier: ^0.41.3
@@ -114,9 +117,6 @@ importers:
       '@astrojs/check':
         specifier: ^0.9.4
         version: 0.9.4(typescript@5.9.2)
-      '@tailwindcss/typography':
-        specifier: ^0.5.16
-        version: 0.5.19(tailwindcss@4.1.13)
       '@types/picomatch':
         specifier: ^4.0.2
         version: 4.0.2
