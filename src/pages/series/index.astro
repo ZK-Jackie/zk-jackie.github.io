@@ -4,7 +4,7 @@ import Layout from '@layouts/Layout.astro';
 import { Icon } from 'astro-icon/components';
 import Breadcrumb from '@layouts/components/common/Breadcrumb.astro';
 import Link from '@components/common/Link.astro';
-import {notDataDraft} from "@utils/collectionUtils";
+import { notDataDraft } from "@utils/collectionUtils";
 
 // Get all posts
 const allPosts = await getCollection('posts', notDataDraft);
@@ -25,7 +25,7 @@ allPosts.forEach(post => {
       title: post.data.title,
       id: post.id,
       position: seriesPosition,
-      date: post.data.date,
+      publishTime: post.data.publishTime,
       description: post.data.description,
       image: post.data.image
     });
@@ -110,7 +110,7 @@ const breadcrumbs = [
                     <span class="absolute flex items-center justify-center w-8 h-8 bg-blue-100 dark:bg-blue-900 rounded-full -left-4 ring-4 ring-white dark:ring-gray-800 text-blue-600 dark:text-blue-400">
                       {post.position}
                     </span>
-                    <Link href={`/${post.id}`} class="group">
+                    <Link href={`/posts/${post.id}`} class="group">
                       <h3 class="flex items-center text-lg font-semibold text-gray-900 dark:text-white group-hover:text-blue-600 dark:group-hover:text-blue-400">
                         {post.title}
                       </h3>

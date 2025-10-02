@@ -23,7 +23,7 @@ interface Props {
   postHeadings: MarkdownHeading[];
 }
 
-const {statistics, pageStatistics} = siteConfig.features;
+const { statistics } = siteConfig;
 const { postSlug, postData, postHeadings } = Astro.props;
 const {
   title, subtitle, description, createTime, image, authors, categories, tags, series, canonical, draft,
@@ -38,9 +38,6 @@ const canonicalUrl = canonical || (
   : Astro.url.pathname
 );
 
-
-//  获取Astro的baseUrl
-const baseUrl = Astro.site || new URL('http://localhost:4321');
 
 // Convert tags to slugs for URLs
 const tagSlugs = tags ? await Promise.all(
@@ -155,7 +152,7 @@ breadcrumbs.push({ name: title, url: canonicalUrl });
 
         <!-- 字数统计 -->
         {wordCount && (
-          <div class="flex items-center">
+          <div class="flex items-center" title="文章字数">
             <Icon name="mdi:text" class="w-5 h-5 mr-1" />
             <span>{wordCount} 字</span>
           </div>
@@ -163,18 +160,18 @@ breadcrumbs.push({ name: title, url: canonicalUrl });
 
         <!-- 阅读时间 -->
         {readingCost && (
-          <div class="flex items-center">
+          <div class="flex items-center" title="预计阅读时间">
             <Icon name="mdi:clock-outline" class="w-5 h-5 mr-1" />
             <span>{readingCost} 分钟</span>
           </div>
         )}
 
         <!-- Page Statistics -->
-        {statistics && pageStatistics && (
-            <div class="flex items-center">
-              <Icon name="mdi:eye" class="w-5 h-5 mr-1" />
-              <Counter type="page_pv"/>
-            </div>
+        {statistics.enabled && statistics.pageViewsEnabled && (
+          <div class="flex items-center" title="页面浏览量">
+            <Icon name="mdi:eye" class="w-5 h-5 mr-1" />
+            <Counter type="page_pv"/>
+          </div>
           )
         }
       </div>

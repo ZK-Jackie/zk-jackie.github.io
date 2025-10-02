@@ -1,3 +1,28 @@
+// 运行时模式类型定义
+export type RuntimeMode = "development" | "github" | "cloudflare" | "production";
+
+// 配置上下文接口，用于传递给配置函数
+export interface ConfigContext {
+  envConfig: EnvConfig;
+  mode: RuntimeMode;
+}
+
+// 配置函数类型，接收配置上下文并返回配置值
+export type ConfigFunction<T> = (context: ConfigContext) => T;
+
+// 递归配置类型，允许配置项是值或函数
+export type ConfigValue<T> = T extends object
+  ? T extends any[]
+    ? T | ConfigFunction<T>  // 数组类型
+    : { [K in keyof T]: ConfigValue<T[K]> } | ConfigFunction<T>  // 对象类型
+  : T | ConfigFunction<T>;  // 基本类型
+
+// 模式配置接口
+export interface ModeConfig {
+  env: DeepPartial<EnvConfig>;
+  site: DeepPartial<ConfigValue<SiteConfig>>;
+}
+
 export interface SiteConfig {
   // Basic site information
   siteMetadata: {
@@ -72,14 +97,16 @@ export interface SiteConfig {
     rss: boolean;
     // Page share options, e.g., ["email", "qrcode"]
     pageShare: string[];
+    // Enable sitemap generation
+    sitemap: boolean;
   };
 
   // Navigation menu
   navigation: {
     // Navigation items for the main menu and footer menu
-    main: NavigationMenuItem[];
+    main: NavigationItem[];
     // Navigation items for the quick access menu in the footer
-    footer?: NavigationMenuItem[];
+    footer?: NavigationItem[];
   };
 
   // Social links
@@ -100,22 +127,12 @@ export interface SiteConfig {
   };
 }
 
+// Navigation menu item, supports nested children for one level of submenu only
 export interface NavigationItem {
   name: string;
-  url: string;
+  url?: string;
+  children?: NavigationItem[];
 }
-
-// 使用联合类型来表达约束关系
-export type NavigationMenuItem = NavigationItem & (
-  | {
-      hasChildren: true;
-      children: NavigationMenuItem[]; // 当 hasChildren 为 true 时，children 必须存在且不为空
-    }
-  | {
-      hasChildren?: false; // hasChildren 为 false 或 undefined
-      children?: never;    // children 不能存在
-    }
-);
 
 // Environment variables schema
 export interface EnvConfig {
@@ -128,21 +145,16 @@ export interface EnvConfig {
 }
 
 // Parsed public environment variables, must start with `PUBLIC_`
-export interface PublicEnvConfig {
-  PUBLIC_SITE_URL: string;
-  // Base URL for the site, used in routing
-  PUBLIC_BASE_URL: string;
-  // Traker script url, could be script from `public` folder or external url
-  PUBLIC_STAT_TRACKER_URL?: string;
-  // JSON string of the configuration parameters for the provider
-  PUBLIC_STAT_PARAMS?: string;
-  // ICP registration number for Chinese sites
-  PUBLIC_LOCALE_ICP?: string;
+export type PublicEnvConfig = {
+  [K in keyof ImportMetaEnv as K extends `PUBLIC_${string}` ? K : never]: ImportMetaEnv[K];
 }
 
-export interface PrivateEnvConfig {}
 
-export interface CloudflareEnvConfig {}
+export interface PrivateEnvConfig {
+}
+
+export interface CloudflareEnvConfig {
+}
 
 
 export interface SocialLinks {
@@ -189,3 +201,8 @@ export interface RobotsRules {
   // e.g., "https://example.com/sitemap.xml"
   sitemap?: string;
 }
+
+// 工具类型：递归的可选类型
+export type DeepPartial<T> = {
+  [P in keyof T]?: T[P] extends object ? DeepPartial<T[P]> : T[P];
+};

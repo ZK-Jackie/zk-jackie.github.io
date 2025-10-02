@@ -24,25 +24,13 @@ abstract class BaseStatistic {
     }
   }
 
-  abstract getScriptHtml(config: SiteConfig["statistics"]): string;
-
-  // getPageViews(pagePath: string): Promise<number>;
-  //
-  // getPageUniqueVisitors(pagePath: string): Promise<number>;
-  //
-  // getSiteViews(): Promise<number>;
-  //
-  // getSiteUniqueVisitors(): Promise<number>;
-  //
-  // recordPageVisit(pagePath: string): Promise<void>;
-  //
-  // recordSiteVisit(): Promise<void>;
+  abstract getScriptHtml(): string;
 }
 
 
 class UmamiStatistic extends BaseStatistic {
   _template: string = (
-    '<script defer src="{src}" data-website-id="{websiteId}"></script>'
+    '<script async src="{src}" data-website-id="{websiteId}"></script>'
   );
 
   constructor(config: SiteConfig["statistics"]) {
@@ -56,11 +44,12 @@ class UmamiStatistic extends BaseStatistic {
     if (!this._trackerParams || !this._trackerParams["data-website-id"]) {
       throw new Error("data-website-id parameter is required for UmamiStatistic");
     }
+    return this;
   }
 
-  getScriptHtml(config: SiteConfig["statistics"]): string {
+  getScriptHtml(): string {
     return this._template
-      .replace("{src}", config.trackerUrl || '')
+      .replace("{src}", this._config.trackerUrl || '')
       .replace("{websiteId}", this._trackerParams?.["data-website-id"] || '');
   }
 }

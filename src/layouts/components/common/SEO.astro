@@ -228,14 +228,14 @@ try {
   <link rel="alternate" type="application/rss+xml" title={`${siteMetadataConfig.title} RSS Feed`} href="/rss.xml" />
 }
 <!-- Schema.org JSON-LD -->
-<script type="application/ld+json" set:html={JSON.stringify(schema)} />
+<script is:inline type="application/ld+json" set:html={JSON.stringify(schema)} />
 
 <!-- BreadcrumbList Schema (if breadcrumbs are provided) -->
 {breadcrumbsSchema && (
-  <script type="application/ld+json" set:html={JSON.stringify(breadcrumbsSchema)} />
+  <script is:inline type="application/ld+json" set:html={JSON.stringify(breadcrumbsSchema)} />
 )}
 
 <!-- VideoObject Schema (if video is provided) -->
 {videoSchema && article && (
-  <script type="application/ld+json" set:html={JSON.stringify(videoSchema)} />
+  <script is:inline type="application/ld+json" set:html={JSON.stringify(videoSchema)} />
 )}

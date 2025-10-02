@@ -8,7 +8,11 @@ import Counter from "./Counter.astro";
 import { notDataDraft } from "@utils/collectionUtils";
 
 const {
-  navigation: navigationConfig, social: socialConfig, siteMetadata: siteMetadataConfig, locale: localeConfig, features: featuresConfig
+  navigation: navigationConfig,
+  social: socialConfig,
+  siteMetadata: siteMetadataConfig,
+  locale: localeConfig,
+  statistics: statisticsConfig
 } = siteConfig;
 
 // Extract footer menu items
@@ -137,7 +141,7 @@ const recentPosts = allPosts
                 }
 
                 {   // 站点统计
-                    featuresConfig.statistics && featuresConfig.siteStatistics ?
+                    statisticsConfig.enabled && statisticsConfig.siteViewsEnabled ?
                     <div class="flex items-center gap-1">
                         <Icon name="mdi:account" class="w-4 h-4" />
                         访客数: <Counter type="site_uv" />

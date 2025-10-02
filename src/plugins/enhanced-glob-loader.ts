@@ -1,5 +1,5 @@
 import { existsSync, promises as fs, Stats } from "node:fs";
-import { relative, join } from "node:path";
+import { relative } from "node:path";
 import { fileURLToPath, pathToFileURL } from "node:url";
 import { bold, green } from "kleur/colors";
 import pLimit from "p-limit";

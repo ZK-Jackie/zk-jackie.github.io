@@ -1,19 +1,5 @@
 import type { EnvConfig, SiteConfig } from "@config/types";
 
-/**
- * 默认环境配置
- */
-export const DEFAULT_ENV_CONFIG: EnvConfig = {
-  MODE: 'development',
-  public: {
-    PUBLIC_SITE_URL: "http://localhost:4321",
-    PUBLIC_BASE_URL: '/',
-    PUBLIC_STAT_TRACKER_URL: '',
-    PUBLIC_STAT_PARAMS: '',
-    PUBLIC_LOCALE_ICP: ''
-  },
-  private: {}
-};
 
 /**
  * 站点元数据默认配置
@@ -48,23 +34,22 @@ const DEFAULT_SEO_CONFIG: SiteConfig["seo"] = {
  */
 const DEFAULT_NAVIGATION_CONFIG: SiteConfig["navigation"] = {
   main: [
-    { name: "首页", url: "/" },
-    { name: "合集", url: "/series" },
+    {name: "首页", url: "/"},
+    {name: "合集", url: "/series"},
     {
       name: "文章",
       url: "/posts",
-      hasChildren: true as const,
       children: [
-        { name: "主题", url: "/categories" },
-        { name: "标签", url: "/tags" },
-        { name: "作者", url: "/authors" },
+        {name: "主题", url: "/categories"},
+        {name: "标签", url: "/tags"},
+        {name: "作者", url: "/authors"},
       ],
     },
-    { name: "关于", url: "/about" },
+    {name: "关于", url: "/about"},
   ],
   footer: [
-    { name: "首页", url: "/" },
-    { name: "关于", url: "/about" },
+    {name: "首页", url: "/"},
+    {name: "关于", url: "/about"},
   ],
 };
 
@@ -98,28 +83,29 @@ const DEFAULT_STATISTICS_CONFIG: SiteConfig["statistics"] = {
 const DEFAULT_FEATURES_CONFIG: SiteConfig["features"] = {
   rss: false,
   pageShare: ["email", "qrcode"],
+  sitemap: false
 };
 
 /** 联系方式配置 **/
-export const DEFAULT_SOCIAL_CONFIG: SiteConfig["social"] = {
+const DEFAULT_SOCIAL_CONFIG: SiteConfig["social"] = {
   github: "https://github.com/ZK-Jackie",
   email: "mailto:jackiey101@foxmail.com",
 };
 
-export const DEFAULT_CONTACT_CONFIG: SiteConfig["contact"] = {
+const DEFAULT_CONTACT_CONFIG: SiteConfig["contact"] = {
   email: "jackiey101@foxmail.com",
   formAction: "#",
 };
 
-export const DEFAULT_LOCALE_CONFIG: SiteConfig["locale"] = {
+const DEFAULT_LOCALE_CONFIG: SiteConfig["locale"] = {
   icpNumber: "",
   publicRegistration: "",
 };
 
 /**
- * 完整的默认站点配置
+ * 导出完整的默认站点配置
  */
-export const DEFAULT_SITE_CONFIG: SiteConfig = {
+export const SITE_CONFIG: SiteConfig = {
   siteMetadata: DEFAULT_SITE_METADATA,
   seo: DEFAULT_SEO_CONFIG,
   i18n: DEFAULT_I18N_CONFIG,
@@ -130,4 +116,19 @@ export const DEFAULT_SITE_CONFIG: SiteConfig = {
   social: DEFAULT_SOCIAL_CONFIG,
   contact: DEFAULT_CONTACT_CONFIG,
   locale: DEFAULT_LOCALE_CONFIG,
+};
+
+/**
+ * 导出默认环境配置
+ */
+export const ENV_CONFIG: EnvConfig = {
+  MODE: 'development',
+  public: {
+    PUBLIC_SITE_URL: "http://localhost:4321",
+    PUBLIC_BASE_URL: '/',
+    PUBLIC_STAT_TRACKER_URL: '',
+    PUBLIC_STAT_PARAMS: '',
+    PUBLIC_LOCALE_ICP: ''
+  },
+  private: {}
 };

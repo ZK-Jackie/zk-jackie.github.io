@@ -30,8 +30,6 @@ if (statistics && statistics.enabled){
   statisticUtil = createStatisticInstance(statistics)
 }
 
-const currentHash = Astro.url.hash || null;
-
 const { 
   title = siteMetadataConfig.title,
   withSiteName = true,
@@ -102,8 +100,8 @@ const {
     <link rel="manifest" href="/site.webmanifest">
 
     <!-- CounterScale Analytics 若不开启，appId 将为 null -->
-    {currentHash && statisticUtil && (
-      <Fragment set:html={statisticUtil.getScriptHtml} />
+    {statisticUtil && (
+      <Fragment set:html={statisticUtil.getScriptHtml()} />
     )}
 
     <meta name="generator" content={Astro.generator} />

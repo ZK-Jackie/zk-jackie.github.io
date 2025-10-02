@@ -24,9 +24,9 @@ const seriesPosts = allPosts
   })
   .sort((a, b) => {
     // Sort by the series position (second element in the array)
-    const posA = parseInt(a.data.series[1] || '0');
-    const posB = parseInt(b.data.series[1] || '0');
-    return posA - posB;
+    if (!a.data.series || !a.data.series[1]) return 1;
+    if (!b.data.series || !b.data.series[1]) return -1;
+    return parseInt(a.data.series[1]) - parseInt(b.data.series[1]);
   });
 
 // Get current post index in the series

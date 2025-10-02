@@ -39,8 +39,8 @@ export function createMarkdownIntegrations(_envConfig: EnvConfig, _siteConfig: S
   ]
 }
 
-export function createSitemapIntegrations(envConfig: EnvConfig, _siteConfig: SiteConfig): AstroIntegration[] {
-  if (envConfig.public.PUBLIC_SITEMAP_ENABLED) {
+export function createSitemapIntegrations(_envConfig: EnvConfig, siteConfig: SiteConfig): AstroIntegration[] {
+  if (siteConfig.features.sitemap) {
     return [sitemap()]
   }
   return []

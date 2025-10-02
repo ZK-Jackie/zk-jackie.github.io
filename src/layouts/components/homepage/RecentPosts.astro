@@ -2,7 +2,7 @@
 import PostCard from "../post/PostCard.astro";
 import Link from "../common/Link.astro";
 import { getCollection } from 'astro:content';
-import {notDataDraft} from "@utils/collectionUtils";
+import { notDataDraft } from "@utils/collectionUtils";
 
 // Get all blog posts and sort by date (newest first)
 const posts = await getCollection('posts', notDataDraft);

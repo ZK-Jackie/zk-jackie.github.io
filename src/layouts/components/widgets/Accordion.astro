@@ -74,8 +74,8 @@ const accordionId = `accordion-${label.replace(/\s+/g, '-').toLowerCase()}-${Mat
   }
   
   // Function to toggle accordion state
-  function toggleAccordion() {
-    const header: HTMLHeadElement = this;
+  function toggleAccordion(this: HTMLElement) {
+    const header = this;
     if (!header) return;
     const isCurrentlyExpanded = header.getAttribute('aria-expanded') === 'true';
     const group = header.getAttribute('data-group');

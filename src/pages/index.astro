@@ -1,16 +1,18 @@
 ---
 import Hero from '@layouts/components/widgets/Hero.astro';
 import Layout from '@layouts/Layout.astro';
-import PopularTopics from '@components/post/PopularTopics.astro';
+// import PopularTopics from '@components/post/PopularTopics.astro';
 import { siteConfig } from '@config';
-import BrowserCategories from "@layouts/components/homepage/BrowserCategories.astro";
+// import BrowserCategories from "@layouts/components/homepage/BrowserCategories.astro";
 import RecentPosts from "@components/homepage/RecentPosts.astro";
+
+const {siteMetadata} = siteConfig;
 ---
 
 <Layout
-  title={siteConfig.title}
+  title={siteMetadata.title}
   withSiteName={false}
-  description={siteConfig.description}
+  description={siteMetadata.description}
   wideContent={true}
 >
   <main class="w-full py-8">

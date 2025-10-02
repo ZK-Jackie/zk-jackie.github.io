@@ -4,14 +4,13 @@ import Layout from '@layouts/Layout.astro';
 import Link from '@components/common/Link.astro';
 import { keyToSlug } from '@utils/taxonomyUtils';
 import {notDataDraft} from "@utils/collectionUtils";
-import {isAlpha} from "@utils/stringUtils";
+
 
 // 获取所有文章
 const posts = await getCollection('posts', notDataDraft);
 
 // 获取所有文章中存在的标签集合
 const allPostTags = [...new Set(posts.flatMap(post => post.data.tags || []))];
-
 
 const tagCounts = await Promise.all(
   allPostTags.map(async postTag => {

@@ -1,4 +1,3 @@
-import { Stats } from "node:fs";
 import { type FileProcessor, EntrySep } from "@plugins/enhanced-glob-loader";
 import {getReadingTime} from "@utils/readingUtils.ts";
 import {execSync} from "child_process";

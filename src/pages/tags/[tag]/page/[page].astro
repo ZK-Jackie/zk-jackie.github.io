@@ -91,11 +91,11 @@ const { tagKey, tagSlug, posts, page, count } = Astro.props;
 const { seo: seoConfig } = siteConfig;
 
 // Get current locale
-const currentLocale = getLocaleByUrl(Astro.url);
+const {lang} = Astro.locals
 
 // Get localized label and description
-const tagLabel = await getTaxonomyLabel('tags', tagKey, currentLocale);
-const tagDescription = await getTaxonomyDescription('tags', tagKey, currentLocale);
+const tagLabel = await getTaxonomyLabel('tags', tagKey, lang);
+const tagDescription = await getTaxonomyDescription('tags', tagKey, lang);
 
 const currentPage = parseInt(page);
 const basePath = `/tags/${tagSlug}`;
@@ -114,11 +114,11 @@ const paginatedPosts = posts.slice(startIndex, endIndex);
 const noindex = seoConfig?.noindex?.includes("/tags") || seoConfig?.noindex?.includes("*") || false;
 
 // SEO meta data
-const pageTitle = currentLocale === 'en' 
+const pageTitle = lang === 'en'
   ? `Tag: ${tagLabel} - Page ${currentPage}` 
   : `标签：${tagLabel} - 第${currentPage}页`;
 const pageDescription = tagDescription || 
-  (currentLocale === 'en' 
+  (lang === 'en'
     ? `Browse articles tagged with ${tagLabel} - Page ${currentPage}` 
     : `浏览标签为 ${tagLabel} 的文章 - 第${currentPage}页`);
 ---
@@ -131,7 +131,7 @@ const pageDescription = tagDescription ||
   <div class="w-full py-8">
     <header class="mb-10">
       <h1 class="text-3xl md:text-4xl font-bold text-gray-900 dark:text-white mb-4">
-        {currentLocale === 'en' ? `Tag: #${tagLabel}` : `标签：#${tagLabel}`}
+        {lang === 'en' ? `Tag: #${tagLabel}` : `标签：#${tagLabel}`}
       </h1>
       {tagDescription && (
         <p class="text-lg text-gray-600 dark:text-gray-400 mb-4">
@@ -139,7 +139,7 @@ const pageDescription = tagDescription ||
         </p>
       )}
       <p class="text-lg text-gray-700 dark:text-gray-300">
-        {currentLocale === 'en' 
+        {lang === 'en'
           ? `Page ${currentPage} of ${totalPages} - ${count} articles` 
           : `第 ${currentPage} 页，共 ${totalPages} 页 - 共 ${count} 篇文章`}
       </p>

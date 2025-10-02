@@ -1,7 +1,7 @@
+import type { APIContext } from "astro";
 import rss from '@astrojs/rss';
 import { getCollection } from 'astro:content';
 import { siteConfig } from '@config';
-import type {APIContext} from "astro";
 
 
 export async function GET(context: APIContext ): Promise<Response> {

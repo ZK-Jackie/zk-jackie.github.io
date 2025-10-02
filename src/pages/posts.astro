@@ -4,7 +4,7 @@ import Layout from '@layouts/Layout.astro';
 import PostCard from '@components/post/PostCard.astro';
 import Pagination from '@components/common/Pagination.astro';
 import { getPagination } from '@utils/pagination';
-import {notDataDraft} from "@utils/collectionUtils";
+import { notDataDraft } from "@utils/collectionUtils";
 
 // Get all blog posts and sort by date (newest first)
 const posts = await getCollection('posts', notDataDraft);
@@ -50,7 +50,7 @@ const paginatedPosts = sortedPosts.slice(0, postsPerPage);
       totalPages={Math.ceil(sortedPosts.length / postsPerPage)}
       prevUrl={null}
       nextUrl={sortedPosts.length > postsPerPage ? `/posts/page/2` : null}
-      basePath="/blog"
+      basePath="/posts"
     />
   </main>
 </Layout>

@@ -1,15 +1,17 @@
-import {loadEnv} from "vite";
-import {defineConfig} from 'astro/config';
+import { loadEnv } from "vite";
+import { defineConfig } from 'astro/config';
 import tailwindcss from '@tailwindcss/vite';
 import createPlugins from "./astro/plugins";
-import {initConfig} from "./src/config";
+import { initConfig } from "./src/config";
+import type { RuntimeMode } from "./src/config/types"
+
 
 /**
  * 配置项：https://docs.astro.build/zh-cn/reference/configuration-reference/
  * 环境变量：https://docs.astro.build/zh-cn/guides/environment-variables/
  * Vite env 配置：https://cn.vite.dev/guide/env-and-mode.html
  */
-const mode = process.env.MODE as RuntimeMode || 'development'
+const mode = process.env.NODE_ENV?.trim() as RuntimeMode || 'development'
 const metaEnv = loadEnv(mode, process.cwd(), "PUBLIC_") as ImportMetaEnv
 const {env: envConfig, site: siteConfig} = initConfig(mode, metaEnv)
 const plugins = createPlugins(envConfig, siteConfig)
