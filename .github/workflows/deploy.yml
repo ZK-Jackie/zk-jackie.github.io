@@ -24,13 +24,13 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: "22"
-          cache: "npm"
+          cache: "pnpm"
 
       - name: Install dependencies
-        run: npm ci
+        run: pnpm install --progress=false --loglevel=error --prod
 
       - name: Build site for GitHub Pages
-        run: npm run build:gh
+        run: pnpm run build:gh
 
       # 上传文件夹时的 path，末尾有无 “/” 效果一致；actions/upload-pages-artifact 在普通的 upload 基础上多了一步打包
       - name: Upload Pages Artifact
@@ -43,7 +43,7 @@ jobs:
           echo ${{ secrets.ENV_PRODUCTION }} > .env.production
 
       - name: Build site for Production
-        run: npm run build:prod
+        run: pnpm run build:prod
 
       - name: Upload Production Artifact
         uses: actions/upload-artifact@v4
