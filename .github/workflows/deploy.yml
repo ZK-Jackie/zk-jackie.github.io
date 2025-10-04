@@ -46,7 +46,9 @@ jobs:
 
       - name: Create env file for Production
         run: |
-          echo ${{ secrets.ENV_PRODUCTION }} > .env.production
+          cat << 'EOF' > .env.production
+          ${{ secrets.ENV_PRODUCTION }}
+          EOF
 
       - name: Build site for Production
         run: pnpm run build:prod
