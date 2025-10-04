@@ -64,7 +64,7 @@ const DEFAULT_I18N_CONFIG: SiteConfig["i18n"] = {
 
 /** 内容默认配置 **/
 const DEFAULT_CONTENT_CONFIG: SiteConfig["content"] = {
-  postsPerPage: 11,
+  postsPerPage: 6,
   summaryLength: 100,
   tocMaxDepth: 4,
 };
