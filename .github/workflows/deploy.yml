@@ -33,7 +33,7 @@ jobs:
           cache: "pnpm"
 
       - name: Install dependencies
-        run: pnpm install --progress=false --loglevel=error --prod
+        run: pnpm install --loglevel=warn --prod
 
       - name: Build site for GitHub Pages
         run: pnpm run build:gh
