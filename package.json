@@ -65,6 +65,7 @@
   },
   "devDependencies": {
     "@astrojs/check": "^0.9.4",
+    "@astrojs/language-server": "^2.15.4",
     "@types/picomatch": "^4.0.2",
     "@vitest/ui": "^3.2.4",
     "jsdom": "^27.0.0",
