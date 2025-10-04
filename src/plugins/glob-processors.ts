@@ -148,7 +148,7 @@ export const readingTimeProcessor: FileProcessor = {
 
     return {
       ...originalData,
-      readingCost: minutes,
+      readingCost: minutes || 1, // 最少 1 分钟
       wordCount: wordCount
     };
   }
