@@ -25,7 +25,7 @@ export async function getStaticPaths({ paginate }: GetStaticPathsOptions): Promi
   let paths: GetStaticPathsResult = [];
   for (const [categoryKey, categoryPosts] of sortedCategoryPostMapping) {
     const slug = await keyToSlug("categories", categoryKey);
-    console.log(slug)
+
     // Paginate paths for each category
     const categoryPaths = paginate(categoryPosts, {
       pageSize: contentConfig.postsPerPage,
@@ -53,7 +53,7 @@ const {
   url: { prev: prevUrl, next: nextUrl },
 } = page;
 const basePath = resolveUrl('./', publicConfig.PUBLIC_BASE_URL, Astro.url.pathname);
-console.log(basePath)
+
 // Get current locale
 const currentLocale = Astro.locals.lang;
 

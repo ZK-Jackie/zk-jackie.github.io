@@ -18,8 +18,8 @@ class ConfigManager {
    * 对于 env 变量，优先级为默认 < 模式覆盖 < .env 文件环境变量；
    * 对于 site 配置，优先级为默认 < 模式覆盖，并支持配置函数的执行
    */
-  init(mode: RuntimeMode = 'development', importMetaEnv?: ImportMetaEnv): { env: EnvConfig; site: SiteConfig } {
-    this._runtimeMode = mode;
+  init(mode: RuntimeMode, importMetaEnv?: ImportMetaEnv): { env: EnvConfig; site: SiteConfig } {
+    this._runtimeMode = mode || 'development';
 
     // 1. 获取模式配置（如果还未缓存）
     const modeConfig = initModeConfig(mode);
@@ -100,7 +100,7 @@ class ConfigManager {
    */
   private ensureInitialized(): void {
     if (!this._isInitialized) {
-      this.init();
+      this.init(import.meta.env.MODE as RuntimeMode);
     }
   }
 

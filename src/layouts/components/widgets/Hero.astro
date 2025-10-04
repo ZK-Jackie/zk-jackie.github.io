@@ -4,7 +4,7 @@ import { siteConfig } from "@config";
 import Link from "../common/Link.astro";
 
 const { title, prologue } = siteConfig.siteMetadata;
-const {social: socialLinks} = siteConfig;
+const { social: socialLinks } = siteConfig;
 
 // Filter out empty social links
 const filteredSocialLinks: [string, string][] = Object.entries(socialLinks)
