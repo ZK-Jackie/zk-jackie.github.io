@@ -1,35 +1,21 @@
 ---
-import { getCollection } from 'astro:content';
+import type { CollectionEntry } from 'astro:content';
 import Layout from '@layouts/Layout.astro';
 import Link from '@components/common/Link.astro';
-import { keyToSlug } from '@utils/taxonomyUtils';
-import {notDataDraft} from "@utils/collectionUtils";
+import { CollectionUtils, PostUtils, TagUtils } from "@utils/collectionUtils";
 
 
-// 获取所有文章
-const posts = await getCollection('posts', notDataDraft);
+// 获取所有标签及其对应的文章
+const tagPostMapping: Map<string, CollectionEntry<"posts">[]> = await (
+  new CollectionUtils("posts")
+    .filter(PostUtils.filterNotDraft)
+    .groupBelongTo(PostUtils.tags)
+)
 
-// 获取所有文章中存在的标签集合
-const allPostTags = [...new Set(posts.flatMap(post => post.data.tags || []))];
-
-const tagCounts = await Promise.all(
-  allPostTags.map(async postTag => {
-    const count = posts.filter(post => 
-      post.data.tags && post.data.tags.includes(postTag)
-    ).length;
-    
-    const slug = await keyToSlug('tags', postTag);
-    
-    return {
-      name: postTag,
-      count,
-      slug
-    };
-  })
-);
-
-// Sort by post count (descending)
-tagCounts.sort((a, b) => b.count - a.count);
+// 将标签映射转换为包含标签名称、slug和文章数量的数组
+const sortedTagMetaList: App.Tags.TagMeta[] = (
+  await TagUtils.getMetaList(tagPostMapping)
+).sort(TagUtils.compareByCountDesc)
 ---
 
 <Layout 
@@ -47,7 +33,7 @@ tagCounts.sort((a, b) => b.count - a.count);
     </header>
     
     <div class="flex flex-wrap gap-3">
-      {tagCounts.map(({ name, count, slug }) => (
+      {sortedTagMetaList.map(({ name, count, slug }) => (
         <Link href={`/tags/${slug}`}
               class="flex items-center gap-2 px-4 py-2 bg-white dark:bg-gray-800 rounded-full shadow-sm hover:shadow-md transition-shadow border border-gray-200 dark:border-gray-700"
         >
@@ -61,7 +47,7 @@ tagCounts.sort((a, b) => b.count - a.count);
       ))}
     </div>
     
-    {tagCounts.length === 0 && (
+    {sortedTagMetaList.length === 0 && (
       <div class="text-center py-12">
         <p class="text-gray-600 dark:text-gray-400">暂无标签</p>
       </div>

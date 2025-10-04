@@ -25,7 +25,7 @@ function posixRelative(from: string, to: string): string {
  * @param contentDir 内容目录的 URL，file:// 协议，是提供给 enhancedGlob 的 base 目录的完整绝对路径
  * @param collection 集合名称
  */
-function getContentEntryIdAndSlug({ entry, contentDir, collection }: {
+function getContentEntryIdAndSlug({ entry, contentDir }: {
   entry: URL;
   contentDir: URL;
   collection: string;

@@ -1,6 +1,7 @@
-import {defineCollection, z} from "astro:content";
-import {enhancedGlob} from "@plugins/enhanced-glob-loader";
-import {postsProcessors, defaultProcessors} from "@utils/glob-processors";
+import { defineCollection, z } from "astro:content";
+import { enhancedGlob } from "@plugins/enhanced-glob-loader";
+import { postsProcessors, defaultProcessors } from "@plugins/glob-processors";
+
 
 /**
  * 1. 若需要自定义 slug，只需在 frontmatter 中添加 slug 字段即可，`id` 字段会随之改变
@@ -75,7 +76,9 @@ const authorsCollection = defineCollection({
   schema: z.object({
     // 确定的页面 slug
     id: z.string().optional(),
-    // 文章标题
+    // 用户提供的 slug，不能以“/”开头
+    slug: z.string().optional(),
+    // 作者名称
     title: z.string(),
     // SEO 标题
     subtitle: z.string().optional(),

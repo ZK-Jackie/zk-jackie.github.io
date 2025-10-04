@@ -1,41 +1,26 @@
 ---
-import { getCollection } from 'astro:content';
+import type { CollectionEntry } from 'astro:content';
 import Layout from '@layouts/Layout.astro';
 import { Icon } from 'astro-icon/components';
 import Link from '@components/common/Link.astro';
-import { keyToSlug } from '@utils/taxonomyUtils';
-import { notDataDraft } from "@utils/collectionUtils";
+import { CollectionUtils, PostUtils, AuthorUtils } from "@utils/collectionUtils";
+import { capitalizeWords } from "@utils/stringUtils";
 
-// Get all blog posts
-const posts = await getCollection('posts', notDataDraft);
 
-// Get all unique authors and count posts for each
-const authors = [...new Set(posts.flatMap(post => post.data.authors || []))];
-const authorCounts = await Promise.all(
-  authors.map(async author => {
-    const count = posts.filter(post => 
-      post.data.authors && post.data.authors.includes(author)
-    ).length;
-    
-    const slug = await keyToSlug('authors', author);
-    
-    return {
-      name: author,
-      count,
-      slug
-    };
-  })
-);
+// 获取所有标签及其对应的文章
+const sortedAuthorPostMapping: Map<string, CollectionEntry<"posts">[]> = await new CollectionUtils("posts")
+  .filter(PostUtils.filterNotDraft)
+  .sortBy(PostUtils.compareByDateDesc)
+  .groupBelongTo(PostUtils.authors);
+// 获取所有作者详情，过滤掉草稿
+const authorDetails = await new CollectionUtils("authors")
+  .filter(AuthorUtils.filterNotDraft)
+  .all();
 
-// Sort by post count (descending)
-authorCounts.sort((a, b) => b.count - a.count);
-
-// Format author names for display
-const formatAuthorName = (name: string) => {
-  return name.split(' ').map(word => 
-    word.charAt(0).toUpperCase() + word.slice(1).toLowerCase()
-  ).join(' ');
-};
+// 将类别映射转换为包含类别名称、slug和文章数量的数组
+const sortedMeta: App.Authors.AuthorMeta[] = (
+  await AuthorUtils.getMetaList(sortedAuthorPostMapping, authorDetails)
+).sort(AuthorUtils.compareByCountDesc)
 ---
 
 <Layout 
@@ -53,14 +38,14 @@ const formatAuthorName = (name: string) => {
     </header>
     
     <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-      {authorCounts.map(({ name, count, slug }) => (
+      {sortedMeta.map(({ name, count, slug }) => (
         <Link href={`/authors/${slug}`}
               class="flex items-center justify-between p-5 bg-white dark:bg-gray-800 rounded-lg shadow-md hover:shadow-lg transition-shadow border border-gray-200 dark:border-gray-700"
         >
           <div class="flex items-center">
             <Icon name="mdi:account" class="w-6 h-6 text-blue-600 dark:text-blue-400 mr-3" />
             <span class="font-medium text-gray-900 dark:text-white">
-              {formatAuthorName(name)}
+              {capitalizeWords(name)}
             </span>
           </div>
           <span class="bg-blue-100 dark:bg-blue-900 text-blue-800 dark:text-blue-200 text-xs font-medium px-2.5 py-0.5 rounded-full">
@@ -70,7 +55,7 @@ const formatAuthorName = (name: string) => {
       ))}
     </div>
     
-    {authorCounts.length === 0 && (
+    {sortedMeta.length === 0 && (
       <div class="text-center py-12">
         <p class="text-gray-600 dark:text-gray-400">没有作者信息</p>
       </div>

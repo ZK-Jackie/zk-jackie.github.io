@@ -5,6 +5,7 @@ export const customI18nMiddleware = defineMiddleware(async (ctx, next) => {
   const pathname = ctx.url.pathname;
 
   // 设置当前语言到上下文
+  // @ts-ignore
   ctx.locals.lang = getLocaleByAbsolutePath(pathname);
 
   // 如果请求中没有语言路径，直接通行

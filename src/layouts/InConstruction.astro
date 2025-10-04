@@ -13,13 +13,9 @@ export interface Props {
 }
 
 const {
-  title = "Under Construction",
-  description = "This page is currently under construction.",
   pageTitle = "Under Construction",
   message = "We're working hard to bring you something amazing. Please check back soon!",
   showBackButton = true,
-  backUrl = "/",
-  backText = "Home"
 } = Astro.props;
 ---
 
@@ -41,16 +37,18 @@ const {
 
     <div class="flex flex-col sm:flex-row gap-4 justify-center">
       {showBackButton && (
-        <Link href='/'
-              class="px-6 py-3 bg-blue-600 hover:bg-blue-700 text-white rounded-md transition-colors duration-300 flex items-center justify-center"
+        <Link
+          href='/'
+          class="px-6 py-3 bg-blue-600 hover:bg-blue-700 text-white rounded-md transition-colors duration-300 flex items-center justify-center"
         >
           <Icon name="mdi:home" class="w-5 h-5 mr-2" />
           Home
         </Link>
       )}
 
-      <Link href='/posts'
-            class="px-6 py-3 bg-gray-200 dark:bg-gray-700 hover:bg-gray-300 dark:hover:bg-gray-600 text-gray-800 dark:text-gray-900 rounded-md transition-colors duration-300 flex items-center justify-center"
+      <Link
+        href='/posts'
+        class="px-6 py-3 bg-gray-200 dark:bg-gray-700 hover:bg-gray-300 dark:hover:bg-gray-600 text-gray-800 dark:text-gray-900 rounded-md transition-colors duration-300 flex items-center justify-center"
       >
         <Icon name="mdi:book-open" class="w-5 h-5 mr-2" />
         Browse All Posts

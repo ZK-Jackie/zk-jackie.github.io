@@ -1,13 +1,13 @@
 import { type FileProcessor, EntrySep } from "@plugins/enhanced-glob-loader";
-import {getReadingTime} from "@utils/readingUtils.ts";
-import {execSync} from "child_process";
-import {fileURLToPath} from "node:url";
+import { getReadingTime } from "@utils/readingUtils.ts";
+import { execSync } from "child_process";
+import { fileURLToPath } from "node:url";
 
 
 // 文件统计信息处理器（基于 Git 信息）
 export const gitStatsProcessor: FileProcessor = {
   name: "git-stats",
-  process: async ({ fileStats, originalData, ...args }) => {
+  process: async ({fileStats, originalData}) => {
     if (!fileStats) return originalData;
     if (!originalData.filePath) {
       throw new Error(
@@ -48,9 +48,9 @@ export const gitStatsProcessor: FileProcessor = {
 // 文件统计信息处理器（基于文件系统统计）
 export const fileStatsProcessor: FileProcessor = {
   name: "file-stats",
-  process: async ({ fileStats, originalData }) => {
+  process: async ({fileStats, originalData}) => {
     if (!fileStats) return originalData;
-    
+
     return {
       ...originalData,
       // 添加文件创建时间
@@ -66,9 +66,9 @@ export const fileStatsProcessor: FileProcessor = {
 // 自动日期处理器
 export const autoCreateTimeProcessor: FileProcessor = {
   name: "auto-create-time",
-  process: async ({ fileStats, originalData, ...args }) => {
+  process: async ({fileStats, originalData}) => {
     if (!fileStats) return originalData;
-    
+
     return {
       ...originalData,
       // 如果没有 createTime 字段，使用文件创建时间
@@ -80,12 +80,12 @@ export const autoCreateTimeProcessor: FileProcessor = {
 // 文件路径处理器
 export const filePathProcessor: FileProcessor = {
   name: "file-path",
-  process: async ({ entry, base, originalData }) => {
+  process: async ({entry, base, originalData}) => {
     const fileUrl = new URL(encodeURI(entry), base);
     const filePath = fileURLToPath(fileUrl);
     const fileName = entry.split(EntrySep).pop();
     const fileNameWithoutExt = fileName?.split('.')[0];
-    
+
     return {
       ...originalData,
       // 添加完整文件路径
@@ -101,17 +101,17 @@ export const filePathProcessor: FileProcessor = {
 // 分类处理器（基于文件夹结构）
 export const categoryFromPathProcessor: FileProcessor = {
   name: "category-from-path",
-  process: async ({ entry, originalData }) => {
+  process: async ({entry, originalData}) => {
     if (originalData.categories && originalData.categories.length > 0) {
       return originalData;
     }
-    
+
     const pathParts = entry.split(EntrySep).filter(part => part !== '');
     // 移除文件名，只保留目录
     pathParts.pop();
-    
+
     const categories = pathParts.length > 0 ? pathParts : ['其他'];
-    
+
     return {
       ...originalData,
       categories
@@ -122,17 +122,17 @@ export const categoryFromPathProcessor: FileProcessor = {
 // 标签处理器（从文件名提取）
 export const tagsFromFileNameProcessor: FileProcessor = {
   name: "tags-from-filename",
-  process: async ({ entry, originalData }) => {
+  process: async ({entry, originalData}) => {
     if (originalData.tags && originalData.tags.length > 0) {
       return originalData;
     }
-    
+
     const fileName = entry.split(EntrySep).pop()?.split('.')[0] || '';
     const tags = fileName
       .split(/[-_]/)
       .filter(tag => tag.length > 1)
       .slice(0, 3); // 最多提取3个标签
-    
+
     return {
       ...originalData,
       tags: tags.length > 0 ? tags : ['其他']
@@ -143,7 +143,7 @@ export const tagsFromFileNameProcessor: FileProcessor = {
 // 阅读时间估算处理器
 export const readingTimeProcessor: FileProcessor = {
   name: "reading-time",
-  process: async ({ contents, originalData }) => {
+  process: async ({contents, originalData}) => {
     const {minutes, wordCount} = getReadingTime(contents);
 
     return {
@@ -157,14 +157,14 @@ export const readingTimeProcessor: FileProcessor = {
 // 内容摘要生成处理器
 export const excerptProcessor: FileProcessor = {
   name: "excerpt",
-  process: async ({ contents, originalData }) => {
+  process: async ({contents, originalData}) => {
     if (originalData.excerpt || originalData.description) {
       return originalData;
     }
-    
+
     // 移除frontmatter
     let content = contents.replace(/^---[\s\S]*?---/, '');
-    
+
     // 移除Markdown标记
     content = content
       .replace(/^#+\s/gm, '') // 标题
@@ -175,10 +175,10 @@ export const excerptProcessor: FileProcessor = {
       .replace(/!\[.*?\]\(.*?\)/g, '') // 图片
       .replace(/\[.*?\]\(.*?\)/g, '') // 链接
       .trim();
-    
+
     // 提取前150个字符作为摘要
     const excerpt = content.substring(0, 150).trim();
-    
+
     return {
       ...originalData,
       excerpt: excerpt || originalData.title || ''
@@ -194,6 +194,14 @@ export const defaultProcessors = [
 ];
 
 export const postsProcessors = [
+  autoCreateTimeProcessor,
+  filePathProcessor,
+  gitStatsProcessor,
+  readingTimeProcessor,
+  excerptProcessor
+];
+
+export const authorsProcessors = [
   autoCreateTimeProcessor,
   filePathProcessor,
   gitStatsProcessor,

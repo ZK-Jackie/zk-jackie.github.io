@@ -8,7 +8,7 @@ import { siteConfig } from "@config";
 import Breadcrumb from '@components/common/Breadcrumb.astro';
 import Link from '@components/common/Link.astro';
 import Counter from "@components/common/Counter.astro";
-import SeriesNav from '@components/widgets/SeriesNav.astro';
+import SeriesNav from '@components/post/SeriesNav.astro';
 import PostTOC from '@components/post/PostTOC.astro';
 import RelatedPosts from '@components/post/RelatedPosts.astro';
 import SocialShare from '@components/post/SocialShare.astro';
@@ -26,8 +26,10 @@ interface Props {
 const { statistics } = siteConfig;
 const { postSlug, postData, postHeadings } = Astro.props;
 const {
-  title, subtitle, description, createTime, image, authors, categories, tags, series, canonical, draft,
-  readingCost, wordCount, publishTime, updateTime
+  title, subtitle, description, createTime,
+  image, authors, categories, tags, series,
+  canonical, draft, readingCost, wordCount,
+  publishTime, updateTime
 } = postData;
 
 // Get the canonical URL for this post
@@ -220,7 +222,6 @@ breadcrumbs.push({ name: title, url: canonicalUrl });
       <SeriesNav 
         currentSlug={postSlug}
         seriesName={series[0]}
-        seriesPosition={series[1]}
       />
     )}
     

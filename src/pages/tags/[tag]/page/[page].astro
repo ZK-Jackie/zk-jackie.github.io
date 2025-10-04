@@ -1,137 +1,87 @@
 ---
-import { getCollection } from 'astro:content';
 import Layout from '@layouts/Layout.astro';
 import PostCard from '@components/post/PostCard.astro';
 import Pagination from '@components/common/Pagination.astro';
-import { getPagination } from '@utils/pagination';
-import { siteConfig } from '@config';
-import { 
-  getAllTaxonomySlugs, 
-  slugToKey, 
-  keyToSlug, 
+import { envConfig, siteConfig } from '@config';
+import {
+  keyToSlug,
   getTaxonomyLabel,
-  getTaxonomyDescription 
+  getTaxonomyDescription
 } from '@utils/taxonomyUtils';
-import { getLocaleByUrl } from '@i18n/utils';
+import { resolveUrl } from '@utils/pathUtils';
+import { CollectionUtils, PostUtils } from "@utils/collectionUtils";
+import type { CollectionEntry } from "astro:content";
+import type { GetStaticPathsOptions, GetStaticPathsResult, Page } from "astro";
 
-export async function getStaticPaths() {
+
+export async function getStaticPaths({ paginate }: GetStaticPathsOptions): Promise<GetStaticPathsResult> {
   const { content: contentConfig } = siteConfig;
-  const posts = await getCollection('posts', ({ data }) => {
-    return !data.draft;
-  });
-  
-  // Get all unique tags from posts
-  const allPostTags = [...new Set(posts.flatMap(post => post.data.tags || []))];
-  
-  // Get configured tag slugs
-  const configuredSlugs = await getAllTaxonomySlugs('tags');
-  
-  // Create slugs for all tags (configured + unconfigured)
-  const unconfiguredSlugs = await Promise.all(
-    allPostTags.map(tag => keyToSlug('tags', tag))
-  );
-  
-  const allSlugs = new Set([
-    ...configuredSlugs,
-    ...unconfiguredSlugs
-  ]);
-  
-  // Create paths for each tag and its pages
-  const paths = await Promise.all(
-    Array.from(allSlugs).map(async slug => {
-      // Convert slug back to original key for filtering
-      const tagKey = await slugToKey('tags', slug);
-    
-      // Filter posts by the original tag key
-      const tagPosts = posts.filter(post => 
-        post.data.tags && post.data.tags.includes(tagKey)
-      ).sort((a, b) => {
-        if (!a.data.publishTime) return 1;
-        if (!b.data.publishTime) return -1;
-        return b.data.publishTime.getTime() - a.data.publishTime.getTime();
-      });
-      
-      // Generate pages for this tag
-      const totalPages = Math.ceil(tagPosts.length / (contentConfig.postsPerPage || 11));
-      
-      return Array.from({ length: totalPages }).map((_, i) => {
-        const page = i + 1;
-        // Skip page 1 as it's handled by the index.astro
-        if (page === 1) return null;
-        
-        return {
-          params: { 
-            tag: slug,
-            page: page.toString()
-          },
-          props: { 
-            tagKey,
-            tagSlug: slug,
-            posts: tagPosts,
-            page,
-            count: tagPosts.length
-          }
-        };
-      }).filter(Boolean); // Remove null entries
-    })
-  );
-  
-  return paths.flat();
+  // 获取所有标签及其对应的文章
+  const sortedTagPostMapping: Map<string, CollectionEntry<"posts">[]> = await new CollectionUtils("posts")
+    .filter(PostUtils.filterNotDraft)
+    .sortBy(PostUtils.compareByDateDesc)
+    .groupBelongTo(PostUtils.tags);
+
+  let paths: GetStaticPathsResult = [];
+  for (const [tagKey, tagPosts] of sortedTagPostMapping) {
+    const slug = await keyToSlug("tags", tagKey);
+
+    // Paginate paths for each category
+    const tagPaths = paginate(tagPosts, {
+      pageSize: contentConfig.postsPerPage,
+      params: { tag: slug },
+      props: { tagKey }
+    });
+
+    paths = paths.concat(tagPaths);
+  }
+  return paths;
 }
 
-interface Props { 
+interface Props {
+  // @Reference https://docs.astro.build/zh-cn/reference/routing-reference/#paginate
+  page: Page<CollectionEntry<"posts">>;
   tagKey: string;
-  tagSlug: string;
-  posts: Array<any>;
-  page: string;
-  count: number;
 }
 
-const { tagKey, tagSlug, posts, page, count } = Astro.props;
-const { seo: seoConfig } = siteConfig;
+const { public: publicConfig } = envConfig;
+const { tagKey, page } = Astro.props;
+const {
+  data: currentPosts,
+  currentPage,
+  lastPage: totalPages,
+  url: { prev: prevUrl, next: nextUrl },
+} = page;
+const basePath = resolveUrl('./', publicConfig.PUBLIC_BASE_URL, Astro.url.pathname);
+
 
 // Get current locale
-const {lang} = Astro.locals
+// @astro-ignore
+const currentLocale = Astro.locals.lang;
 
 // Get localized label and description
-const tagLabel = await getTaxonomyLabel('tags', tagKey, lang);
-const tagDescription = await getTaxonomyDescription('tags', tagKey, lang);
-
-const currentPage = parseInt(page);
-const basePath = `/tags/${tagSlug}`;
-
-// Get pagination data
-const { startIndex, endIndex, prevUrl, nextUrl, totalPages } = getPagination({ 
-  page: currentPage, 
-  totalPosts: count, 
-  basePath 
-});
-
-// Get posts for the current page
-const paginatedPosts = posts.slice(startIndex, endIndex);
-
-// Set noindex based on site config
-const noindex = seoConfig?.noindex?.includes("/tags") || seoConfig?.noindex?.includes("*") || false;
+const tagLabel = await getTaxonomyLabel('tags', tagKey, currentLocale);
+const tagDescription = await getTaxonomyDescription('tags', tagKey, currentLocale);
 
 // SEO meta data
-const pageTitle = lang === 'en'
+const pageTitle = currentLocale === 'en'
   ? `Tag: ${tagLabel} - Page ${currentPage}` 
   : `标签：${tagLabel} - 第${currentPage}页`;
 const pageDescription = tagDescription || 
-  (lang === 'en'
-    ? `Browse articles tagged with ${tagLabel} - Page ${currentPage}` 
-    : `浏览标签为 ${tagLabel} 的文章 - 第${currentPage}页`);
+  (currentLocale === 'en'
+    ? `Articles tagged with ${tagLabel} - Page ${currentPage}`
+    : `标签为 ${tagLabel} 的文章 - 第${currentPage}页`);
 ---
 
 <Layout 
   title={pageTitle}
   description={pageDescription}
-  noindex={noindex}
+  noindex={true}
 >
   <div class="w-full py-8">
     <header class="mb-10">
       <h1 class="text-3xl md:text-4xl font-bold text-gray-900 dark:text-white mb-4">
-        {lang === 'en' ? `Tag: #${tagLabel}` : `标签：#${tagLabel}`}
+        {currentLocale === 'en' ? `Tag: #${tagLabel}` : `标签：#${tagLabel}`}
       </h1>
       {tagDescription && (
         <p class="text-lg text-gray-600 dark:text-gray-400 mb-4">
@@ -139,14 +89,14 @@ const pageDescription = tagDescription ||
         </p>
       )}
       <p class="text-lg text-gray-700 dark:text-gray-300">
-        {lang === 'en'
-          ? `Page ${currentPage} of ${totalPages} - ${count} articles` 
-          : `第 ${currentPage} 页，共 ${totalPages} 页 - 共 ${count} 篇文章`}
+        {currentLocale === 'en'
+          ? `Page ${currentPage} of ${totalPages}`
+          : `第 ${currentPage} 页，共 ${totalPages} 页`}
       </p>
     </header>
     
     <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-      {paginatedPosts.map((post) => (
+      {currentPosts.map((post) => (
         <PostCard post={post} />
       ))}
     </div>

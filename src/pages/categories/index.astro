@@ -1,39 +1,27 @@
 ---
-import { getCollection } from 'astro:content';
-import Layout from '@layouts/Layout.astro';
+import type { CollectionEntry } from 'astro:content';
 import { Icon } from 'astro-icon/components';
+import Layout from '@layouts/Layout.astro';
 import Link from '@components/common/Link.astro';
-import { keyToSlug } from '@utils/taxonomyUtils';
-import {notDataDraft} from "@utils/collectionUtils";
+import { CollectionUtils, PostUtils, CategoryUtils } from "@utils/collectionUtils";
 
-// Get all blog posts
-const posts = await getCollection('posts', notDataDraft);
 
-// Get all unique categories and count posts for each
-const categories = [...new Set(posts.flatMap(post => post.data.categories || []))];
-const categoryCounts = await Promise.all(
-  categories.map(async category => {
-    const count = posts.filter(post => 
-      post.data.categories && post.data.categories.includes(category)
-    ).length;
-    
-    const slug = await keyToSlug('categories', category);
-    
-    return {
-      name: category,
-      count,
-      slug
-    };
-  })
-);
+// 获取所有类别及其对应的文章
+const categoryPostMapping: Map<string, CollectionEntry<"posts">[]> = await (
+  new CollectionUtils("posts")
+    .filter(PostUtils.filterNotDraft)
+    .groupBelongTo(PostUtils.categories)
+)
 
-// Sort by post count (descending)
-categoryCounts.sort((a, b) => b.count - a.count);
+// 将类别映射转换为包含类别名称、slug和文章数量的数组
+const sortedCategoryMetaList: App.Categories.CategoryMeta[] = (
+  await CategoryUtils.getMetaList(categoryPostMapping)
+).sort(CategoryUtils.compareByCountDesc)
 ---
 
 <Layout 
   title="类别"
-  description="浏览博客的所有类别"
+  description="按文章类别筛选"
 >
   <div class="w-full py-8">
     <header class="mb-10">
@@ -46,7 +34,7 @@ categoryCounts.sort((a, b) => b.count - a.count);
     </header>
     
     <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-      {categoryCounts.map(({ name, count, slug }) => (
+      {sortedCategoryMetaList.map(({ name, count, slug }) => (
         <Link href={`/categories/${slug}`}
               class="flex items-center justify-between p-5 bg-white dark:bg-gray-800 rounded-lg shadow-md hover:shadow-lg transition-shadow border border-gray-200 dark:border-gray-700"
         >
@@ -63,7 +51,7 @@ categoryCounts.sort((a, b) => b.count - a.count);
       ))}
     </div>
     
-    {categoryCounts.length === 0 && (
+    {sortedCategoryMetaList.length === 0 && (
       <div class="text-center py-12">
         <p class="text-gray-600 dark:text-gray-400">暂无主题</p>
       </div>

@@ -26,6 +26,12 @@ describe('resolveUrl', () => {
 
   it('应处理相对路径', () => {
     expect(resolveUrl('contact', '/base', 'https://site.com/base/')).toBe('https://site.com/base/contact');
+    expect(resolveUrl('contact', '/base', '/base/')).toBe('/base/contact');
+    expect(resolveUrl('./sibling', '/base', '/base/original')).toBe('/base/sibling');
+    expect(resolveUrl('../parent', '/base', '/base/original')).toBe('/parent');
+    expect(resolveUrl('../parent', '/base', '/base/original')).toBe('/parent');
+    expect(resolveUrl('./', '/base', '/base/original')).toBe('/base/');
+    expect(resolveUrl('../', '/base', '/base/original')).toBe('/');
     expect(resolveUrl('./sibling', basePath, currentUrl)).toBe('https://example.com/blog/sibling');
     expect(resolveUrl('../parent', basePath, currentUrl)).toBe('https://example.com/parent');
   });

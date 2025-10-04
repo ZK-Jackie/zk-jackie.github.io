@@ -6,76 +6,110 @@
  * @returns The resolved absolute URL.
  */
 export function resolveUrl(path: string, baseUrl: string = "/", currentUrl?: string): string {
-  // 输入验证
-  if (!path) {
+  // 输入验证和清理
+  if (!path?.trim()) {
     console.warn('Invalid path provided to resolveUrl:', path);
     return baseUrl;
   }
 
-  // 去除首尾空白字符
-  path = path.trim();
-  
-  // 空路径返回base URL
-  if (!path) {
-    return baseUrl;
-  }
+  const cleanPath = path.trim();
 
-  // 1. 处理外部链接（特例：协议相对 URL 也是外部链接，需继续处理）
-  if (isExternalLink(path)) {
-    // 2. 处理协议相对URL (//example.com/path)
-    if (path.startsWith('//')) {
-      // 如果有当前URL，使用其协议；否则默认使用https
-      const protocol = currentUrl ? safeCreateURL(currentUrl)?.protocol || 'https:' : 'https:';
-      return `${protocol}${path}`;
+  // 1. 处理外部链接
+  if (isExternalLink(cleanPath)) {
+    // 处理协议相对URL (//example.com/path)
+    if (cleanPath.startsWith('//')) {
+      const protocol = currentUrl ? (safeCreateURL(currentUrl)?.protocol || 'https:') : 'https:';
+      return `${protocol}${cleanPath}`;
     }
-    return path;
+    return cleanPath;
   }
 
-  // 3. 处理绝对路径
-  if (path.startsWith('/')) {
-    // 检查 baseUrl 是完整URL还是路径前缀
-    if (isCompleteUrl(baseUrl)) {
-      // baseUrl 是完整URL (如 "https://example.com")
-      return normalizePath(baseUrl, path);
-    } else {
-      // baseUrl 是路径前缀 (如 "/", "/project1")
-      return normalizePath(baseUrl, path);
-    }
+  // 2. 处理绝对路径
+  if (cleanPath.startsWith('/')) {
+    return normalizePath(baseUrl, cleanPath);
   }
 
-  // 4. 处理锚点或查询参数
-  if (path.startsWith("#") || path.startsWith("?")) {
-    return resolveAnchorOrQuery(path, baseUrl, currentUrl);
+  // 3. 处理锚点或查询参数
+  if (cleanPath.startsWith("#") || cleanPath.startsWith("?")) {
+    return resolveAnchorOrQuery(cleanPath, baseUrl, currentUrl);
   }
 
-  // 5. 处理相对路径（需要当前 URL）
-  return resolveRelativePath(path, baseUrl, currentUrl);
+  // 4. 处理相对路径
+  return resolveRelativePath(cleanPath, baseUrl, currentUrl);
 }
 
 /**
  * 处理锚点和查询参数
  */
 function resolveAnchorOrQuery(path: string, baseUrl: string, currentUrl?: string): string {
-  // 构建完整的当前URL
-  let fullCurrentUrl = buildFullCurrentUrl(baseUrl, currentUrl);
+  const fullCurrentUrl = buildFullCurrentUrl(baseUrl, currentUrl);
+  const url = safeCreateURL(fullCurrentUrl);
   
-  try {
-    const url = safeCreateURL(fullCurrentUrl);
-    if (!url) {
-      console.error('Cannot create URL from:', fullCurrentUrl);
-      return normalizePath(baseUrl, path);
-    }
-    
-    if (path.startsWith("#")) {
-      url.hash = path;
-    } else {
-      url.search = path;
-    }
-    return url.toString();
-  } catch (e) {
-    console.error('Error processing anchor/query:', e);
+  if (!url) {
     return normalizePath(baseUrl, path);
   }
+  
+  if (path.startsWith("#")) {
+    url.hash = path;
+  } else if (path.startsWith("?")) {
+    url.search = path;
+  }
+  
+  return url.toString();
+}
+
+/**
+ * 处理路径形式的相对路径解析（不涉及完整URL）
+ */
+function resolvePathRelative(relativePath: string, _baseUrl: string, currentPath: string): string {
+  // 清理当前路径，移除查询参数和锚点
+  const cleanCurrentPath = currentPath.split(/[?#]/)[0];
+  
+  // 获取当前目录
+  const getCurrentDir = () => cleanCurrentPath.endsWith('/') ? cleanCurrentPath : getPathDirname(cleanCurrentPath);
+  
+  if (relativePath.startsWith('./')) {
+    // 处理 ./sibling 形式
+    return normalizePath(getCurrentDir(), relativePath.substring(2));
+  }
+  
+  if (relativePath.startsWith('../')) {
+    // 处理 ../parent 形式 - 使用循环简化逻辑
+    let currentDir = getCurrentDir();
+    let remainingPath = relativePath;
+    
+    while (remainingPath.startsWith('../')) {
+      currentDir = getPathDirname(currentDir);
+      remainingPath = remainingPath.substring(3);
+    }
+    
+    return remainingPath ? normalizePath(currentDir, remainingPath) : 
+           (currentDir.endsWith('/') ? currentDir : currentDir + '/');
+  }
+  
+  // 处理 contact 形式（相对于当前目录）
+  return normalizePath(getCurrentDir(), relativePath);
+}
+
+/**
+ * 获取路径的目录部分
+ */
+function getPathDirname(path: string): string {
+  if (!path || path === '/') {
+    return '/';
+  }
+
+  // 移除末尾斜杠（如果有）
+  const cleanPath = path.endsWith('/') ? path.slice(0, -1) : path;
+  
+  // 找到最后一个斜杠的位置
+  const lastSlashIndex = cleanPath.lastIndexOf('/');
+  
+  if (lastSlashIndex <= 0) {
+    return '/';
+  }
+  
+  return cleanPath.substring(0, lastSlashIndex + 1);
 }
 
 /**
@@ -83,31 +117,26 @@ function resolveAnchorOrQuery(path: string, baseUrl: string, currentUrl?: string
  */
 function resolveRelativePath(path: string, baseUrl: string, currentUrl?: string): string {
   if (!currentUrl) {
-    console.warn('Relative path requires current URL for resolution, using base URL instead');
     return normalizePath(baseUrl, path);
   }
   
-  try {
-    // 构建完整的当前URL用于相对路径解析
-    const fullCurrentUrl = buildFullCurrentUrl(baseUrl, currentUrl);
-    
-    // 使用 URL API 解析相对路径
-    const resolvedUrl = safeCreateURL(path, fullCurrentUrl);
-    if (!resolvedUrl) {
-      console.error('Failed to resolve relative path:', path, 'with base:', fullCurrentUrl);
-      return normalizePath(baseUrl, path);
-    }
-    
-    // 如果baseUrl是路径前缀，确保解析后的路径也在正确的作用域内
-    if (!isCompleteUrl(baseUrl)) {
-      return ensureWithinBaseUrl(resolvedUrl.toString(), baseUrl);
-    }
-    
-    return resolvedUrl.toString();
-  } catch (e) {
-    console.error('Error resolving relative path:', e);
+  // 如果currentUrl是路径形式，使用路径解析
+  if (!isCompleteUrl(currentUrl)) {
+    return resolvePathRelative(path, baseUrl, currentUrl);
+  }
+  
+  // 使用 URL API 解析相对路径
+  const fullCurrentUrl = buildFullCurrentUrl(baseUrl, currentUrl);
+  const resolvedUrl = safeCreateURL(path, fullCurrentUrl);
+  
+  if (!resolvedUrl) {
     return normalizePath(baseUrl, path);
   }
+  
+  // 如果baseUrl是路径前缀，确保解析后的路径在正确作用域内
+  return !isCompleteUrl(baseUrl) ? 
+    ensureWithinBaseUrl(resolvedUrl.toString(), baseUrl) : 
+    resolvedUrl.toString();
 }
 
 /**
@@ -174,57 +203,38 @@ function isCompleteUrl(url: string): boolean {
  * 规范化路径拼接（处理斜杠问题）
  */
 function normalizePath(base: string, path: string): string {
-  if (!base || !path) {
-    return base || path || '/';
-  }
+  if (!base && !path) return '/';
+  if (!base) return path;
+  if (!path) return base;
   
-  const normalizedBase = base.endsWith('/') ? base.slice(0, -1) : base;
-  const normalizedPath = path.startsWith('/') ? path : `/${path}`;
-  return `${normalizedBase}${normalizedPath}`;
+  // 移除base末尾的斜杠，确保path以斜杠开头
+  const cleanBase = base.endsWith('/') ? base.slice(0, -1) : base;
+  const cleanPath = path.startsWith('/') ? path : `/${path}`;
+  
+  return `${cleanBase}${cleanPath}`;
 }
 
 /**
- * Check if a path is an external link.
- * @param path The path to check.
- * @return True if the path is an external link (starts with protocol:// or special protocols), false otherwise.
+ * 检查是否为外部链接，其中，`//` `xx:` 的形式均被视为外部链接
+ * @param path 被检查的链接
+ * @return 若为外部链接，返回 true，否则为 false
  */
 export function isExternalLink(path: string): boolean {
-  if (!path) {
+  if (!path?.trim()) {
     return false;
   }
 
-  // 去除首尾空白字符
-  path = path.trim();
-
-  // 检查常见的外部协议
-  const externalProtocols = [
-    'http://', 'https://',
-    'ftp://', 'ftps://',
-    'mailto:', 'tel:', 'sms:',
-    'data:', 'blob:',
-    'file://', 'javascript:',
-    // 社交媒体和应用协议
-    'twitter:', 'facebook:', 'instagram:',
-    'whatsapp:', 'telegram:', 'skype:',
-    // 其他协议
-    'steam:', 'discord:', 'spotify:',
-  ];
-
-  // 检查是否以任何外部协议开头
-  for (const protocol of externalProtocols) {
-    if (path.toLowerCase().startsWith(protocol)) {
-      return true;
-    }
-  }
+  const trimmedPath = path.trim();
 
   // 检查协议相对URL (//example.com)
-  if (path.startsWith('//')) {
+  if (trimmedPath.startsWith('//')) {
     return true;
   }
 
-  // 更严格的协议检查：匹配 "protocol:" 格式
+  // 检查是否包含协议：更简洁的正则表达式匹配 "protocol:" 格式
+  // 匹配常见的外部协议，包括 http(s)、ftp、mailto、tel 等
   const protocolRegex = /^[a-zA-Z][a-zA-Z0-9+.-]*:/;
-  return protocolRegex.test(path);
+  return protocolRegex.test(trimmedPath);
 }
 
 /**
@@ -236,9 +246,8 @@ export function isExternalLink(path: string): boolean {
 export function safeCreateURL(url: string, base?: string): URL | null {
   try {
     return new URL(url, base);
-  } catch (e) {
-    console.warn('Invalid URL:', url, 'Base:', base, 'Error:', e);
-    return null;
+  } catch {
+    return null; // 简化错误处理，移除多余的日志
   }
 }
 

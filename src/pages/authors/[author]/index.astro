@@ -1,101 +1,66 @@
 ---
-import { getCollection } from 'astro:content';
+import type { CollectionEntry } from 'astro:content';
 import { Icon } from 'astro-icon/components';
 import Layout from '@layouts/Layout.astro';
 import PostCard from '@components/post/PostCard.astro';
 import Pagination from '@components/common/Pagination.astro';
-import { getPagination } from '@utils/pagination';
+import { getTotalPages } from '@utils/pageUtils';
 import { siteConfig } from '@config';
-import { notDataDraft } from "@utils/collectionUtils";
-import { 
-  keyToSlug,
-  getTaxonomyLabel,
-  getTaxonomyDescription 
-} from '@utils/taxonomyUtils';
-import { getLocaleByUrl } from '@i18n/utils';
+import { getTaxonomyLabel, getTaxonomyDescription } from '@utils/taxonomyUtils';
+import { AuthorUtils, CollectionUtils, PostUtils } from "@utils/collectionUtils";
+import { resolveUrl } from "@utils/pathUtils";
 
-const { seo: seoConfig } = siteConfig;
 
-export async function getStaticPaths() {
-  // 获取所有文章
-  const posts = await getCollection('posts', notDataDraft);
-  
-  // 获取所有文章中实际使用的作者，并统计每个作者的文章数量
-  const authorPostsMap = new Map<string, any[]>();
-  
-  // 遍历所有文章，收集作者和对应的文章
-  posts.forEach(post => {
-    if (post.data.authors && post.data.authors.length > 0) {
-      post.data.authors.forEach(author => {
-        if (!authorPostsMap.has(author)) {
-          authorPostsMap.set(author, []);
-        }
-        authorPostsMap.get(author)!.push(post);
-      });
-    }
-  });
-  
-  // 获取作者详情集合
-  const authorEntries = await getCollection('authors');
-  
-  // 只为有文章的作者生成静态路径
-  const paths = await Promise.all(
-    Array.from(authorPostsMap.entries()).map(async ([authorKey, authorPosts]) => {
-      // 为作者生成对应的 slug
-      const authorSlug = await keyToSlug('authors', authorKey);
-      
-      // 按发布时间排序文章
-      const sortedPosts = authorPosts.sort((a, b) => {
-        if (!a.data.publishTime) return 1;
-        if (!b.data.publishTime) return -1;
-        return b.data.publishTime.getTime() - a.data.publishTime.getTime();
-      });
-      
-      // Find author details if available (match by title or key)
-      const authorDetails = authorEntries.find(entry => 
-        entry.data.title.toLowerCase() === authorKey.toLowerCase() ||
-        entry.id.toLowerCase() === authorKey.toLowerCase()
-      );
-      
-      return {
-        params: { author: authorSlug },
-        props: { 
-          authorKey,
-          authorSlug,
-          authorDetails: authorDetails || null,
-          posts: sortedPosts,
-          count: sortedPosts.length
-        }
-      };
-    })
-  );
-  
-  return paths;
+interface Props {
+  authorKey: string;
+  authorDetail: CollectionEntry<"authors"> | null;
+  posts: CollectionEntry<"posts">[];
 }
 
-const { authorKey, authorSlug, authorDetails, posts, count } = Astro.props;
+interface Path {
+  params: { author: string };
+  props: Props;
+}
 
-// Get current locale
-const currentLocale = getLocaleByUrl(Astro.url);
+
+export async function getStaticPaths(): Promise<Path[]> {
+  // 获取所有标签及其对应的文章
+  const sortedAuthorPostMapping: Map<string, CollectionEntry<"posts">[]> = await new CollectionUtils("posts")
+    .filter(PostUtils.filterNotDraft)
+    .sortBy(PostUtils.compareByDateDesc)
+    .groupBelongTo(PostUtils.authors);
+  // 获取所有作者详情，过滤掉草稿
+  const authorDetails = await new CollectionUtils("authors")
+    .filter(AuthorUtils.filterNotDraft)
+    .all();
+  // 获取页面数据列表，转换为包含作者名称、slug、详情、文章列表和文章数量的数组后返回
+  const pageDataList = await AuthorUtils.getPageDataList(sortedAuthorPostMapping, authorDetails)
+  return pageDataList.map(pageData => ({
+    params: { author: pageData.slug },
+    props: {
+      authorKey: pageData.name,
+      authorDetail: pageData.detail || null,
+      posts: pageData.posts
+    }
+  }));
+}
+
+
+const { content: contentConfig } = siteConfig;
+const { authorKey, authorDetail, posts } = Astro.props;
+const currentLocale = Astro.locals.lang;
+const paginationBasePath = resolveUrl('page', Astro.url.pathname)
+const page2Url = resolveUrl('2', paginationBasePath)
+const pageSize = contentConfig.postsPerPage;
+const totalSize = posts.length;
+const totalPages = getTotalPages(totalSize, pageSize);
 
 // Get localized label and description
 const authorLabel = await getTaxonomyLabel('authors', authorKey, currentLocale);
 const authorDescription = await getTaxonomyDescription('authors', authorKey, currentLocale);
 
-const basePath = `/authors/${authorSlug}`;
-
-// Get pagination data for first page
-const { postsPerPage } = getPagination({ 
-  page: 1, 
-  totalPosts: count, 
-  basePath 
-});
-
 // Get posts for the first page
-const paginatedPosts = posts.slice(0, postsPerPage);
-
-// Set noindex based on site config
-const noindex = seoConfig.noindex.includes("/authors") || seoConfig.noindex.includes("*");
+const paginatedPosts = posts.slice(0, pageSize);
 
 // SEO meta data
 const pageTitle = currentLocale === 'en' ? `Author: ${authorLabel}` : `作者：${authorLabel}`;
@@ -108,7 +73,7 @@ const pageDescription = authorDescription ||
 <Layout 
   title={pageTitle}
   description={pageDescription}
-  noindex={noindex}
+  noindex={true}
 >
   <div class="w-full py-8">
     <header class="mb-10">
@@ -121,40 +86,40 @@ const pageDescription = authorDescription ||
         </p>
       )}
       <p class="text-lg text-gray-700 dark:text-gray-300">
-        {currentLocale === 'en' ? `${count} articles` : `共 ${count} 篇文章`}
+        {currentLocale === 'en' ? `${totalSize} articles` : `共 ${totalSize} 篇文章`}
       </p>
     </header>
     
-    {authorDetails && (
+    {authorDetail && (
       <div class="mb-12 bg-white dark:bg-gray-800 rounded-xl shadow-md overflow-hidden border border-gray-100 dark:border-gray-700">
         <div class="p-6 md:p-8">
           <div class="flex flex-col md:flex-row gap-8">
-            {authorDetails.data.image && (
+            {authorDetail.data.image && (
               <div class="flex-shrink-0">
                 <div class="w-32 h-32 md:w-40 md:h-40 rounded-full overflow-hidden border-4 border-white dark:border-gray-700 shadow-lg">
                   <img 
-                    src={authorDetails.data.image} 
-                    alt={authorDetails.data.title} 
+                    src={authorDetail.data.image}
+                    alt={authorDetail.data.title}
                     class="w-full h-full object-cover"
                   />
                 </div>
                 
-                {authorDetails.data.social && (
+                {authorDetail.data.social && (
                   <div class="mt-4 flex justify-center gap-3">
-                    {authorDetails.data.social.twitter && (
-                      <a href={authorDetails.data.social.twitter} target="_blank" rel="noopener noreferrer" 
+                    {authorDetail.data.social.twitter && (
+                      <a href={authorDetail.data.social.twitter} target="_blank" rel="noopener noreferrer"
                          class="text-gray-500 hover:text-blue-500 dark:text-gray-400 dark:hover:text-blue-400 transition-colors">
                         <Icon name="mdi:twitter" class="w-6 h-6" />
                       </a>
                     )}
-                    {authorDetails.data.social.facebook && (
-                      <a href={authorDetails.data.social.facebook} target="_blank" rel="noopener noreferrer" 
+                    {authorDetail.data.social.facebook && (
+                      <a href={authorDetail.data.social.facebook} target="_blank" rel="noopener noreferrer"
                          class="text-gray-500 hover:text-blue-600 dark:text-gray-400 dark:hover:text-blue-400 transition-colors">
                         <Icon name="mdi:facebook" class="w-6 h-6" />
                       </a>
                     )}
-                    {authorDetails.data.social.instagram && (
-                      <a href={authorDetails.data.social.instagram} target="_blank" rel="noopener noreferrer" 
+                    {authorDetail.data.social.instagram && (
+                      <a href={authorDetail.data.social.instagram} target="_blank" rel="noopener noreferrer"
                          class="text-gray-500 hover:text-pink-600 dark:text-gray-400 dark:hover:text-pink-400 transition-colors">
                         <Icon name="mdi:instagram" class="w-6 h-6" />
                       </a>
@@ -166,7 +131,7 @@ const pageDescription = authorDescription ||
             
             <div class="flex-grow">
               <div class="prose prose-lg dark:prose-invert max-w-none">
-                <Fragment set:html={authorDetails.body} />
+                <Fragment set:html={authorDetail.body} />
               </div>
             </div>
           </div>
@@ -174,7 +139,7 @@ const pageDescription = authorDescription ||
       </div>
     )}
     
-    {count > 0 ? (
+    {totalSize > 0 ? (
       <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
         {paginatedPosts.map((post) => (
           <PostCard post={post} />
@@ -190,10 +155,10 @@ const pageDescription = authorDescription ||
     
     <Pagination
       currentPage={1}
-      totalPages={Math.ceil(count / postsPerPage)}
+      totalPages={totalPages}
       prevUrl={null}
-      nextUrl={count > postsPerPage ? `${basePath}/page/2/` : null}
-      basePath={basePath}
+      nextUrl={totalSize > pageSize ? page2Url : null}
+      basePath={paginationBasePath}
     />
   </div>
 </Layout>

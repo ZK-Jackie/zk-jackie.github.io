@@ -1,80 +1,58 @@
 ---
-import { getCollection } from 'astro:content';
 import Layout from '@layouts/Layout.astro';
 import PostCard from '@components/post/PostCard.astro';
 import Pagination from '@components/common/Pagination.astro';
-import { siteConfig } from '@config';
-import { getPagination } from '@utils/pagination';
-import { notDataDraft } from "@utils/collectionUtils";
+import { envConfig, siteConfig } from '@config';
+import { resolveUrl } from '@utils/pathUtils';
+import { CollectionUtils, PostUtils } from "@utils/collectionUtils";
+import type { CollectionEntry } from "astro:content";
+import type { GetStaticPathsOptions, GetStaticPathsResult, Page } from "astro";
 
-export async function getStaticPaths() {
+// @Reference https://docs.astro.build/zh-cn/reference/routing-reference/#paginate
+export async function getStaticPaths({ paginate }: GetStaticPathsOptions): Promise<GetStaticPathsResult> {
   const {content: contentConfig} = siteConfig;
-  const posts = await getCollection('posts', notDataDraft);
-  
-  // Sort posts by date (newest first)
-  const sortedPosts = posts.sort((a, b) => {
-    if (!a.data.publishTime) return 1;
-    if (!b.data.publishTime) return -1;
-    return b.data.publishTime.getTime() - a.data.publishTime.getTime();
 
-  });
-  
-  // Calculate total pages
-  const totalPages = Math.ceil(sortedPosts.length / (contentConfig.postsPerPage || 11));
-  
-  // Generate paths for each page
-  return Array.from({ length: totalPages }).map((_, i) => {
-    const page = i + 1;
-    // Skip page 1 as it's handled by the index.astro
-    if (page === 1) return null;
-    
-    return {
-      params: { page: page.toString() },
-      props: { 
-        posts: sortedPosts,
-        page,
-        totalPosts: sortedPosts.length
-      }
-    };
-  }).filter(Boolean); // Remove null entries
+  const sortedPosts = await new CollectionUtils("posts")
+    .filter(PostUtils.filterNotDraft)
+    .sortBy(PostUtils.compareByDateDesc)
+    .all();
+
+  return paginate(sortedPosts, {
+    pageSize: contentConfig.postsPerPage
+  })
 }
 
-interface Props { 
-  posts: Array<any>;
-  page: number;
-  totalPosts: number;
+interface Props {
+  // @Reference https://docs.astro.build/zh-cn/reference/routing-reference/#paginate
+  page: Page<CollectionEntry<"posts">>;
 }
 
-const { posts, page, totalPosts } = Astro.props;
-const currentPage = page;
-const basePath = '/blog';
-
-// Get pagination data
-const { startIndex, endIndex, prevUrl, nextUrl, totalPages } = getPagination({ 
-  page: currentPage, 
-  totalPosts, 
-  basePath 
-});
-
-// Get posts for the current page
-const paginatedPosts = posts.slice(startIndex, endIndex);
+const { public: publicConfig } = envConfig;
+const { page } = Astro.props;
+const {
+  data: currentPosts,
+  currentPage,
+  lastPage: totalPages,
+  url: { prev: prevUrl, next: nextUrl },
+} = page;
+const basePath = resolveUrl('./', publicConfig.PUBLIC_BASE_URL, Astro.url.pathname);
 ---
 
 <Layout 
-  title={`文章列表 - 第${currentPage}页`}
-  description={`Explore our articles, tutorials, and insights - Page ${currentPage}`}
+  title={`文章 - 第${currentPage}页`}
+  description={`技术文章和学习笔记`}
   noindex={true}
 >
   <main class="w-full py-8">
     <header class="mb-10">
       <h1 class="text-3xl md:text-4xl font-bold text-gray-900 dark:text-white mb-4">文章</h1>
       <p class="text-lg text-gray-700 dark:text-gray-300">
-        Page {currentPage} of {totalPages} - Explore our articles, tutorials, and insights
+        第 {currentPage} 页，共 {totalPages} 页 - 技术文章、学习笔记
       </p>
     </header>
     
     <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-      {paginatedPosts.map((post) => (
+      {currentPosts.map((post) => (
         <PostCard post={post} />
       ))}
     </div>

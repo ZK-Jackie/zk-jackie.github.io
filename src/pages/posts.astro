@@ -1,35 +1,28 @@
 ---
-import { getCollection } from 'astro:content';
 import Layout from '@layouts/Layout.astro';
 import PostCard from '@components/post/PostCard.astro';
 import Pagination from '@components/common/Pagination.astro';
-import { getPagination } from '@utils/pagination';
-import { notDataDraft } from "@utils/collectionUtils";
+import { getTotalPages } from '@utils/pageUtils';
+import { CollectionUtils, PostUtils } from "@utils/collectionUtils";
+import { siteConfig } from "@config";
 
-// Get all blog posts and sort by date (newest first)
-const posts = await getCollection('posts', notDataDraft);
+const { content: contentConfig } = siteConfig;
+const postsPerPage = contentConfig.postsPerPage;
 
-// Sort posts by date (newest first)
-const sortedPosts = posts.sort((a, b) => {
-  if (!a.data.publishTime) return 1;
-  if (!b.data.publishTime) return -1;
-  return b.data.publishTime.getTime() - a.data.publishTime.getTime();
-});
+// Get all blog posts and sort by date
+const sortedPosts = await new CollectionUtils("posts")
+  .filter(PostUtils.filterNotDraft)
+  .sortBy(PostUtils.compareByDateDesc)
+  .all();
 
 // Get pagination data for first page
-const { postsPerPage } = getPagination({ 
-  page: 1, 
-  totalPosts: sortedPosts.length, 
-  basePath: '/posts'
-});
-
-// Get posts for the first page
+const totalPages = getTotalPages(sortedPosts.length, postsPerPage);
 const paginatedPosts = sortedPosts.slice(0, postsPerPage);
 ---
 
 <Layout
   title={`文章`}
-  description="最新的技术文章和学习笔记"
+  description="技术文章和学习笔记"
 >
   <main class="w-full py-8">
     <header class="mb-10">
@@ -44,13 +37,22 @@ const paginatedPosts = sortedPosts.slice(0, postsPerPage);
         <PostCard post={post} />
       ))}
     </div>
-    
+    {
+      sortedPosts.length === 0 && (
+        <div class="text-center py-12">
+          <p class="text-gray-600 dark:text-gray-400">
+            暂无文章
+          </p>
+        </div>
+      )
+    }
     <Pagination
       currentPage={1}
-      totalPages={Math.ceil(sortedPosts.length / postsPerPage)}
+      totalPages={totalPages}
       prevUrl={null}
       nextUrl={sortedPosts.length > postsPerPage ? `/posts/page/2` : null}
-      basePath="/posts"
+      basePath="/posts/page"
     />
+
   </main>
 </Layout>

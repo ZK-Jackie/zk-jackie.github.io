@@ -120,6 +120,16 @@ const videoSchema = Astro.props.video ? {
 } : null;
 
 // Article schema for blog posts, using chema.org JSON-LD
+let keywords = "";
+if (tags && tags.length > 0) {
+  keywords = tags.join(", ");
+}
+if (categories && categories.length > 0) {
+  if (keywords) {
+    keywords += ", ";
+  }
+  keywords += categories.join(", ");
+}
 let schema;
 if (article && publishISODate) {
   schema = {

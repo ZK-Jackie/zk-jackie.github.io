@@ -1,25 +1,25 @@
 ---
-import { getCollection } from 'astro:content';
 import Link from "../common/Link.astro";
+import { PostUtils, CollectionUtils } from "@utils/collectionUtils";
 
 interface Props {
+  // using slug to identify the current post and highlight it in the series
   currentSlug: string;
   seriesName: string;
-  seriesPosition: string;
 }
 
-const { currentSlug, seriesName, seriesPosition } = Astro.props;
+const { currentSlug, seriesName } = Astro.props;
 
 // Get all posts (including drafts for preview purposes)
-const allPosts = await getCollection('posts');
+const allPosts = await new CollectionUtils("posts").filter(PostUtils.filterNotDraft).all();
 
 // Filter posts that are part of the same series and sort them by position
 const seriesPosts = allPosts
   .filter(post => {
     // Check if the post has series data and it matches our series name
     return post.data.series && 
-           Array.isArray(post.data.series) && 
-           post.data.series.length === 2 && 
+           Array.isArray(post.data.series) &&
+           post.data.series.length === 2 &&
            post.data.series[0] === seriesName;
   })
   .sort((a, b) => {
@@ -90,19 +90,19 @@ const nextPost = currentIndex < seriesPosts.length - 1 ? seriesPosts[currentInde
 
       {prevPost && (
         <Link href={`/posts/${prevPost.id}`} class="flex items-center text-xs text-blue-600 dark:text-blue-400 hover:text-blue-800 dark:hover:text-blue-300 bg-white dark:bg-gray-800 rounded-lg shadow-md transition-transform duration-400 hover:transform hover:scale-[1.02] min-h-15 p-2">
-            <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7" />
-            </svg>
-            上一篇： {prevPost.data.title}
+          <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7" />
+          </svg>
+          上一篇： {prevPost.data.title}
         </Link>
       )}
 
       {nextPost && (
         <Link href={`/posts/${nextPost.id}`} class="flex items-center text-xs text-blue-600 dark:text-blue-400 hover:text-blue-800 dark:hover:text-blue-300 bg-white dark:bg-gray-800 rounded-lg shadow-md transition-transform duration-400 hover:transform hover:scale-[1.02] min-h-15 p-2">
-            下一篇： {nextPost.data.title}
-            <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 ml-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7" />
-            </svg>
+          下一篇： {nextPost.data.title}
+          <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 ml-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7" />
+          </svg>
         </Link>
       )}
     </div>
@@ -110,72 +110,72 @@ const nextPost = currentIndex < seriesPosts.length - 1 ? seriesPosts[currentInde
 </div>
 
 <style>
-    .series-nav-content {
-        scrollbar-width: thin;
-        scrollbar-color: rgba(156, 163, 175, 0.5) transparent;
-        max-height: 200px;
-    }
+  .series-nav-content {
+    scrollbar-width: thin;
+    scrollbar-color: rgba(156, 163, 175, 0.5) transparent;
+    max-height: 200px;
+  }
 
-    .series-nav-content.series-nav-collapsed {
-        max-height: 0;
-        overflow: hidden;
-    }
+  .series-nav-content.series-nav-collapsed {
+    max-height: 0;
+    overflow: hidden;
+  }
 
-    .series-nav-content::-webkit-scrollbar {
-        width: 6px;
-    }
+  .series-nav-content::-webkit-scrollbar {
+    width: 6px;
+  }
 
-    .series-nav-content::-webkit-scrollbar-track {
-        background: transparent;
-    }
+  .series-nav-content::-webkit-scrollbar-track {
+    background: transparent;
+  }
 
-    .series-nav-content::-webkit-scrollbar-thumb {
-        background-color: rgba(156, 163, 175, 0.5);
-        border-radius: 20px;
-    }
+  .series-nav-content::-webkit-scrollbar-thumb {
+    background-color: rgba(156, 163, 175, 0.5);
+    border-radius: 20px;
+  }
 
-    .dark .series-nav-content::-webkit-scrollbar-thumb {
-        background-color: rgba(209, 213, 219, 0.5);
-    }
+  .dark .series-nav-content::-webkit-scrollbar-thumb {
+    background-color: rgba(209, 213, 219, 0.5);
+  }
 
-    /* Rotate the chevron when collapsed */
-    #series-nav-toggle[aria-expanded="false"] svg {
-        transform: rotate(-90deg);
-    }
+  /* Rotate the chevron when collapsed */
+  #series-nav-toggle[aria-expanded="false"] svg {
+    transform: rotate(-90deg);
+  }
 
-    #series-nav-toggle svg {
-        transition: transform 0.3s ease;
-    }
+  #series-nav-toggle svg {
+    transition: transform 0.3s ease;
+  }
 </style>
 
 <script>
-    const defaultCollapsed = false
-      // Simple toggle functionality for table of contents
-    document.addEventListener('DOMContentLoaded', () => {
-      const tocToggle = document.getElementById('series-nav-toggle');
-      const tocContent = document.getElementById('series-nav-content');
+  const defaultCollapsed = false
+    // Simple toggle functionality for table of contents
+  document.addEventListener('DOMContentLoaded', () => {
+    const tocToggle = document.getElementById('series-nav-toggle');
+    const tocContent = document.getElementById('series-nav-content');
 
-      if (tocToggle && tocContent) {
-        // Set initial state
-        tocContent.classList.add(defaultCollapsed ? 'series-nav-collapsed' : 'series-nav-expanded');
+    if (tocToggle && tocContent) {
+      // Set initial state
+      tocContent.classList.add(defaultCollapsed ? 'series-nav-collapsed' : 'series-nav-expanded');
 
-        tocToggle.addEventListener('click', () => {
-          // Toggle the class instead of manipulating styles directly
-          tocContent.classList.toggle('series-nav-collapsed');
-          tocContent.classList.toggle('series-nav-expanded');
+      tocToggle.addEventListener('click', () => {
+        // Toggle the class instead of manipulating styles directly
+        tocContent.classList.toggle('series-nav-collapsed');
+        tocContent.classList.toggle('series-nav-expanded');
 
-          // Update the aria-expanded attribute for accessibility
-          const isExpanded = tocContent.classList.contains('series-nav-expanded');
-          tocToggle.setAttribute('aria-expanded', isExpanded.toString());
-        });
-      }
-    });
+        // Update the aria-expanded attribute for accessibility
+        const isExpanded = tocContent.classList.contains('series-nav-expanded');
+        tocToggle.setAttribute('aria-expanded', isExpanded.toString());
+      });
+    }
+  });
 
-    // 移动当前项目到视图中间
-    document.addEventListener('DOMContentLoaded', () => {
-      const currentItem = document.querySelector('.series-nav-content .bg-blue-600');
-      if (currentItem) {
-        currentItem.scrollIntoView({ behavior: 'smooth', block: 'center' });
-      }
-    });
+  // 移动当前项目到视图中间
+  document.addEventListener('DOMContentLoaded', () => {
+    const currentItem = document.querySelector('.series-nav-content .bg-blue-600');
+    if (currentItem) {
+      currentItem.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    }
+  });
 </script>

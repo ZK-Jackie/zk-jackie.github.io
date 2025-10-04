@@ -1,11 +1,10 @@
 ---
 import { Icon } from 'astro-icon/components';
 import { Image } from 'astro:assets';
-import { getCollection } from 'astro:content';
 import { siteConfig } from "@config";
 import Link from "./Link.astro";
 import Counter from "./Counter.astro";
-import { notDataDraft } from "@utils/collectionUtils";
+import { CollectionUtils, PostUtils } from "@utils/collectionUtils";
 
 const {
   navigation: navigationConfig,
@@ -21,140 +20,146 @@ const footerMenu = navigationConfig.footer || [];
 // Filter social media links that are not empty
 const socialLinks = Object.entries(socialConfig)
   .filter(([_, url]) => url !== "")
-  .map(([platform, url]) => ({ platform, url }));
-  
+  .map(([platform, url]) => ({platform, url}));
+
 // Get recent posts for the footer, sort posts by date (newest first) and get the latest 3
-const allPosts = await getCollection('posts', notDataDraft);
-const recentPosts = allPosts
-  .sort((a, b) => {
-    if (!a.data.publishTime) return 1;
-    if (!b.data.publishTime) return -1;
-    return b.data.publishTime.getTime() - a.data.publishTime.getTime();
-  })
-  .slice(0, 3);
+const latestSortedPosts = await new CollectionUtils("posts")
+  .filter(PostUtils.filterNotDraft)
+  .sortBy(PostUtils.compareByUpdateTimeDesc)
+  .limit(3);
 ---
 
 
 <footer class="bg-white dark:bg-gray-900 border-t border-gray-200 dark:border-gray-700 mt-10 w-full">
-    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 w-full py-8">
-        <div class="grid grid-cols-1 md:grid-cols-3 gap-8">
-            <!-- Logo and Description -->
-            <div class="flex flex-col space-y-4">
-                {siteMetadataConfig.logoType === 'image' ? (
-                    <Image
-                        src={siteMetadataConfig.logo}
-                        alt={siteMetadataConfig.title + ' Logo'}
-                        width={siteMetadataConfig.logoSize ? Number(siteMetadataConfig.logoSize[0]) : 240}
-                        height={siteMetadataConfig.logoSize ? Number(siteMetadataConfig.logoSize[1]) : 30}
-                        class="mr-2"
-                    />
-                    ) : (
-                    <span class="font-bold text-2xl">{siteMetadataConfig.title}</span>
+  <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 w-full py-8">
+    <div class="grid grid-cols-1 md:grid-cols-3 gap-8">
+      <!-- Logo and Description -->
+      <div class="flex flex-col space-y-4">
+        {siteMetadataConfig.logoType === 'image' ? (
+          <Image
+            src={siteMetadataConfig.logo}
+            alt={siteMetadataConfig.title + ' Logo'}
+            width={siteMetadataConfig.logoSize ? Number(siteMetadataConfig.logoSize[0]) : 240}
+            height={siteMetadataConfig.logoSize ? Number(siteMetadataConfig.logoSize[1]) : 30}
+            class="mr-2"
+          />
+        ): (
+          <span class="font-bold text-2xl">{siteMetadataConfig.title}</span>
+        )}
+        <p class="text-gray-500 dark:text-gray-400 text-sm">
+          <!--Providing valuable resources and tutorials for web developers and tech enthusiasts.-->
+          {siteMetadataConfig.description}
+        </p>
+        <!-- Social Media Links -->
+        <div class="flex space-x-4 mt-4">
+          {socialLinks.map(({platform, url}) => (
+            <a href={url}
+               target="_blank"
+               rel="noopener noreferrer"
+               class="text-gray-500 hover:text-blue-600 dark:text-gray-400 dark:hover:text-blue-400 transition-colors duration-300"
+               aria-label={`Follow on ${platform}`}
+            >
+              <Icon name={`mdi:${platform}`} class="w-6 h-6"/>
+            </a>
+          ))}
+        </div>
+      </div>
+
+      <!-- Quick Links -->
+      <div class="not-md:hidden">
+        <h3 class="text-gray-900 dark:text-white font-semibold text-lg mb-4">快捷导航</h3>
+        <ul class="space-y-2">
+          {footerMenu.map((item) => (
+            <li>
+              <Link
+                href={item.url}
+                class="text-gray-500 hover:text-blue-600 dark:text-gray-400 dark:hover:text-blue-400 transition-colors duration-300"
+              >
+                {item.name}
+              </Link>
+            </li>
+          ))}
+        </ul>
+      </div>
+
+      <!-- Latest Posts -->
+      {
+        latestSortedPosts.length > 0 && (
+          <div>
+            <h3 class="text-gray-900 dark:text-white font-semibold text-lg mb-4">最近更新</h3>
+            <div class="space-y-4">
+              {
+                latestSortedPosts.map((post) => (
+                  <Link
+                    href={`/posts/${post.id}`}
+                    class="flex gap-3 group items-start"
+                  >
+                    <div class="flex-grow">
+                      <h4 class="text-sm text-gray-800 dark:text-gray-300 group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors duration-300 line-clamp-2">
+                          {post.data.title}
+                        </h4>
+                    </div>
+                  {
+                    post.data.image && (
+                      <div class="flex-shrink-0 w-16">
+                        <Image
+                          src={post.data.image}
+                          alt={post.data.title}
+                          width={64}
+                          height={36}
+                          class="rounded w-full aspect-[16/9] object-cover"
+                        />
+                      </div>
                     )
-                }
-                <p class="text-gray-500 dark:text-gray-400 text-sm">
-                    <!--Providing valuable resources and tutorials for web developers and tech enthusiasts.-->
-                  {siteMetadataConfig.description}
-                </p>
-                <!-- Social Media Links -->
-                <div class="flex space-x-4 mt-4">
-                  {socialLinks.map(({platform, url}) => (
-                          <a href={url}
-                             target="_blank"
-                             rel="noopener noreferrer"
-                             class="text-gray-500 hover:text-blue-600 dark:text-gray-400 dark:hover:text-blue-400 transition-colors duration-300"
-                             aria-label={`Follow on ${platform}`}
-                          >
-                              <Icon name={`mdi:${platform}`} class="w-6 h-6"/>
-                          </a>
-                  ))}
-                </div>
+                  }
+                  </Link>
+                ))
+              }
             </div>
-
-            <!-- Quick Links -->
-            <div class="not-md:hidden">
-                <h3 class="text-gray-900 dark:text-white font-semibold text-lg mb-4">快捷导航</h3>
-                <ul class="space-y-2">
-                    {footerMenu.map((item) => (
-                        <li>
-                            <Link href={item.url}
-                               class="text-gray-500 hover:text-blue-600 dark:text-gray-400 dark:hover:text-blue-400 transition-colors duration-300"
-                            >
-                              {item.name}
-                            </Link>
-                        </li>
-                    ))}
-                </ul>
-            </div>
-
-            <!-- Latest Posts -->
-            {
-                recentPosts.length > 0 ?
-                    <div>
-                        <h3 class="text-gray-900 dark:text-white font-semibold text-lg mb-4">最近更新</h3>
-                        <div class="space-y-4">
-                            {
-                                recentPosts.map((post) => (
-                                    <Link href={`/posts/${post.id}`}
-                                       class="flex gap-3 group items-start"
-                                    >
-                                        <div class="flex-grow">
-                                            <h4 class="text-sm text-gray-800 dark:text-gray-300 group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors duration-300 line-clamp-2">
-                                              {post.data.title}
-                                            </h4>
-                                        </div>
-                                        {
-                                            post.data.image && (
-                                                <div class="flex-shrink-0 w-16">
-                                                    <Image src={post.data.image}
-                                                           alt={post.data.title}
-                                                           width={64}
-                                                           height={36}
-                                                           class="rounded w-full aspect-[16/9] object-cover"
-                                                    />
-                                                </div>
-                                        )}
-                                    </Link>
-                                ))
-                            }
-                        </div>
-                    </div> : ""
-            }
-
-        </div>
-
-        <!-- Copyright -->
-        <div class="border-t border-gray-200 dark:border-gray-700 mt-8 pt-6">
-            <div class="flex flex-col md:flex-row justify-between items-center gap-4 text-sm text-gray-500 dark:text-gray-400">
-                {   // ICP 备案
-                    localeConfig.icpNumber ?
-                    <a href="https://beian.miit.gov.cn/#/Integrated/index" target="_blank" rel="noopener noreferrer">
-                        {localeConfig.icpNumber}
-                    </a> : null
-                }
-
-                {   // 网安备案
-                    localeConfig.publicRegistration ?
-                    <a href="https://beian.mps.gov.cn/#/query/webSearch" target="_blank" rel="noopener noreferrer">
-                      {localeConfig.publicRegistration}
-                    </a> : null
-                }
-
-                {   // 站点统计
-                    statisticsConfig.enabled && statisticsConfig.siteViewsEnabled ?
-                    <div class="flex items-center gap-1">
-                        <Icon name="mdi:account" class="w-4 h-4" />
-                        访客数: <Counter type="site_uv" />
-                    </div> : null
-                }
-
-                {   // 版权信息
-                    siteMetadataConfig.copyright ?
-                    <div>
-                        <p>{siteMetadataConfig.copyright}</p>
-                    </div> : null
-                }
-            </div>
-        </div>
+          </div>
+        )
+      }
     </div>
+
+    <!-- Copyright -->
+    <div class="border-t border-gray-200 dark:border-gray-700 mt-8 pt-6">
+      <div class="flex flex-col md:flex-row justify-between items-center gap-4 text-sm text-gray-500 dark:text-gray-400">
+        { // ICP 备案
+          localeConfig.icpNumber && (
+            <a
+              href="https://beian.miit.gov.cn/#/Integrated/index" target="_blank"
+              rel="noopener noreferrer">
+              {localeConfig.icpNumber}
+            </a>
+          )
+        }
+
+        {   // 网安备案
+          localeConfig.publicRegistration && (
+            <a href="https://beian.mps.gov.cn/#/query/webSearch" target="_blank" rel="noopener noreferrer">
+              {localeConfig.publicRegistration}
+            </a>
+          )
+        }
+
+        { // 站点统计
+          statisticsConfig.enabled && statisticsConfig.siteViewsEnabled && (
+            <div class="flex items-center gap-1">
+              <Icon name="mdi:account" class="w-4 h-4"/>
+              访客数:
+              <Counter type="site_uv"/>
+            </div>
+          )
+        }
+
+        { // 版权信息
+          siteMetadataConfig.copyright && (
+            <div>
+                <p>{siteMetadataConfig.copyright}</p>
+            </div>
+          )
+        }
+      </div>
+    </div>
+  </div>
 </footer>

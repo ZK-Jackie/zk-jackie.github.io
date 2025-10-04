@@ -1,16 +1,16 @@
-import { type CollectionEntry, getCollection } from 'astro:content';
+import { type CollectionEntry } from 'astro:content';
 import type { SearchItem } from './search.d.ts';
-import {notDataDraft} from "@utils/collectionUtils.ts";
-import {formatDate} from "@utils/dateUtils.ts";
+import { CollectionUtils, PostUtils } from "@utils/collectionUtils.ts";
+import { formatDate } from "@utils/dateUtils.ts";
 
 
 export class SearchIndex {
   private posts: CollectionEntry<"posts">[] = [];
   private indexData: SearchItem[] = [];
 
-  async index(){
+  async index() {
     if (this.posts.length === 0) {
-      this.posts = await getCollection('posts', notDataDraft);
+      this.posts = await new CollectionUtils("posts").filter(PostUtils.filterNotDraft).all();
       this.indexData = this.posts.map(post => {
         // Create a serializable version of the image data if it exists
         const imageData = post.data.image ? {

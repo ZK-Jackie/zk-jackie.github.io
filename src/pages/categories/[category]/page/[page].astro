@@ -1,128 +1,75 @@
 ---
-import { getCollection } from 'astro:content';
 import Layout from '@layouts/Layout.astro';
 import PostCard from '@components/post/PostCard.astro';
 import Pagination from '@components/common/Pagination.astro';
-import { getPagination } from '@utils/pagination';
-import { siteConfig } from '@config';
-import { 
-  getAllTaxonomySlugs, 
-  slugToKey, 
-  keyToSlug, 
+import { envConfig, siteConfig } from '@config';
+import {
+  keyToSlug,
   getTaxonomyLabel,
-  getTaxonomyDescription 
+  getTaxonomyDescription
 } from '@utils/taxonomyUtils';
-import { getLocaleByUrl } from '@i18n/utils';
+import { resolveUrl } from '@utils/pathUtils';
+import { CollectionUtils, PostUtils } from "@utils/collectionUtils";
+import type { CollectionEntry } from "astro:content";
+import type { GetStaticPathsOptions, GetStaticPathsResult, Page } from "astro";
 
 
-export async function getStaticPaths() {
+export async function getStaticPaths({ paginate }: GetStaticPathsOptions): Promise<GetStaticPathsResult> {
   const { content: contentConfig } = siteConfig;
-  const posts = await getCollection('posts', ({ data }) => {
-    return !data.draft;
-  });
-  
-  // Get all unique categories from posts
-  const allPostCategories = [...new Set(posts.flatMap(post => post.data.categories || []))];
-  
-  // Get configured category slugs
-  const configuredSlugs = await getAllTaxonomySlugs('categories');
-  
-  // Create slugs for all categories (configured + unconfigured)
-  const unconfiguredSlugs = await Promise.all(
-    allPostCategories.map(category => keyToSlug('categories', category))
-  );
-  
-  const allSlugs = new Set([
-    ...configuredSlugs,
-    ...unconfiguredSlugs
-  ]);
-  
-  // Create paths for each category and its pages
-  const paths = await Promise.all(
-    Array.from(allSlugs).map(async slug => {
-      // Convert slug back to original key for filtering
-      const categoryKey = await slugToKey('categories', slug);
-    
-      // Filter posts by the original category key
-      const categoryPosts = posts.filter(post => 
-        post.data.categories && post.data.categories.includes(categoryKey)
-      ).sort((a, b) => {
-        if (!a.data.publishTime) return 1;
-        if (!b.data.publishTime) return -1;
-        return b.data.publishTime.getTime() - a.data.publishTime.getTime();
-      });
-      
-      // Generate pages for this category
-      const totalPages = Math.ceil(categoryPosts.length / (contentConfig.postsPerPage || 11));
-      
-      return Array.from({ length: totalPages }).map((_, i) => {
-        const page = i + 1;
-        // Skip page 1 as it's handled by the index.astro
-        if (page === 1) return null;
-        
-        return {
-          params: { 
-            category: slug,
-            page: page.toString()
-          },
-          props: { 
-            categoryKey,
-            categorySlug: slug,
-            posts: categoryPosts,
-            page,
-            count: categoryPosts.length
-          }
-        };
-      }).filter(Boolean); // Remove null entries
-    })
-  );
-  
-  return paths.flat();
+  // 获取所有标签及其对应的文章
+  const sortedCategoryPostMapping: Map<string, CollectionEntry<"posts">[]> = await new CollectionUtils("posts")
+    .filter(PostUtils.filterNotDraft)
+    .sortBy(PostUtils.compareByDateDesc)
+    .groupBelongTo(PostUtils.categories);
+
+  let paths: GetStaticPathsResult = [];
+  for (const [categoryKey, categoryPosts] of sortedCategoryPostMapping) {
+    const slug = await keyToSlug("categories", categoryKey);
+    console.log(slug)
+    // Paginate paths for each category
+    const categoryPaths = paginate(categoryPosts, {
+      pageSize: contentConfig.postsPerPage,
+      params: { category: slug },
+      props: { categoryKey }
+    });
+
+    paths = paths.concat(categoryPaths);
+  }
+  return paths;
 }
 
-interface Props { 
+interface Props {
+  // @Reference https://docs.astro.build/zh-cn/reference/routing-reference/#paginate
+  page: Page<CollectionEntry<"posts">>;
   categoryKey: string;
-  categorySlug: string;
-  posts: Array<any>;
-  page: number;
-  count: number;
 }
 
-const { categoryKey, categorySlug, posts, page, count } = Astro.props;
-const { seo: seoConfig } = siteConfig;
-
+const { public: publicConfig } = envConfig;
+const { categoryKey, page } = Astro.props;
+const {
+  data: currentPosts,
+  currentPage,
+  lastPage: totalPages,
+  url: { prev: prevUrl, next: nextUrl },
+} = page;
+const basePath = resolveUrl('./', publicConfig.PUBLIC_BASE_URL, Astro.url.pathname);
+console.log(basePath)
 // Get current locale
-const currentLocale = getLocaleByUrl(Astro.url);
+const currentLocale = Astro.locals.lang;
 
 // Get localized label and description
 const categoryLabel = await getTaxonomyLabel('categories', categoryKey, currentLocale);
 const categoryDescription = await getTaxonomyDescription('categories', categoryKey, currentLocale);
 
-const currentPage = page;
-const basePath = `/categories/${categorySlug}`;
-
-// Get pagination data
-const { startIndex, endIndex, prevUrl, nextUrl, totalPages } = getPagination({ 
-  page: currentPage, 
-  totalPosts: count, 
-  basePath 
-});
-
-// Get posts for the current page
-const paginatedPosts = posts.slice(startIndex, endIndex);
-
-// Set noindex based on site config
-const noindex = seoConfig?.noindex?.includes("/categories") || seoConfig?.noindex?.includes("*") || false;
-
 // Page title and description
-const pageTitle = `${categoryLabel} - 第${currentPage}页`;
-const pageDescription = categoryDescription || `查看"${categoryLabel}"分类下的文章 - 第${currentPage}页`;
+const pageTitle = `类别：${categoryLabel} - 第${currentPage}页`;
+const pageDescription = categoryDescription || `"${categoryLabel}"分类下的文章 - 第${currentPage}页`;
 ---
 
 <Layout 
   title={pageTitle}
   description={pageDescription}
-  noindex={noindex}
+  noindex={true}
 >
   <div class="w-full py-8">
     <header class="mb-10">
@@ -130,12 +77,12 @@ const pageDescription = categoryDescription || `查看"${categoryLabel}"分类�
         分类：{categoryLabel}
       </h1>
       <p class="text-lg text-gray-700 dark:text-gray-300">
-        第 {currentPage} 页，共 {totalPages} 页 - 共 {count} 篇文章
+        第 {currentPage} 页，共 {totalPages} 页
       </p>
     </header>
     
     <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-      {paginatedPosts.map((post) => (
+      {currentPosts.map((post) => (
         <PostCard post={post} />
       ))}
     </div>

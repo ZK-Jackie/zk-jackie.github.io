@@ -1,7 +1,7 @@
 ---
-import { type CollectionEntry, type InferEntrySchema, getCollection } from 'astro:content';
-import {notDataDraft} from "@utils/collectionUtils";
-import {shuffleArray} from "@utils/arrayUtils";
+import type { CollectionEntry, InferEntrySchema } from 'astro:content';
+import { PostUtils, CollectionUtils } from "@utils/collectionUtils";
+import { shuffleArray } from "@utils/arrayUtils";
 import PostCard from "./PostCard.astro";
 
 interface Props {
@@ -11,10 +11,11 @@ interface Props {
 }
 
 const { currentSlug, currentPostData, limit = 3 } = Astro.props;
-const allPosts = await getCollection('posts', notDataDraft);
 
-// Filter out the current post
-const otherPosts = allPosts.filter(post => post.id !== currentSlug);
+const otherPosts = await new CollectionUtils("posts")
+  .filter(PostUtils.filterNotDraft)
+  .filter(PostUtils.filterNotIdEq(currentSlug))
+  .all();
 
 // Function to get related posts
 function getRelatedPosts(

@@ -4,7 +4,7 @@ import Header from "@components/common/Header.astro";
 import Footer from "@components/common/Footer.astro";
 import SEO from "@components/common/SEO.astro";
 import { siteConfig } from '@config';
-import {createStatisticInstance} from "../plugins/statistic";
+import { createStatisticInstance } from "@plugins/statistic";
 
 interface Props {
   title?: string;
@@ -30,7 +30,7 @@ if (statistics && statistics.enabled){
   statisticUtil = createStatisticInstance(statistics)
 }
 
-const { 
+const {
   title = siteMetadataConfig.title,
   withSiteName = true,
   description = siteMetadataConfig.description,
@@ -105,7 +105,7 @@ const {
     )}
 
     <meta name="generator" content={Astro.generator} />
-    
+
     <!-- Critical CSS to prevent FOUC -->
     <style is:inline>
       /* Critical styles to prevent layout shifts */
@@ -160,7 +160,7 @@ const {
         }
       }
     </style>
-    
+
     <!-- SEO Component -->
     <SEO
       title={`${title}${withSiteName ? ` - ${title}` : ''}`}
@@ -175,21 +175,21 @@ const {
       tags={tags}
       categories={categories}
     />
-  
-  
-    
+
+
+
   </head>
   <body class="loading bg-white dark:bg-gray-900 text-gray-900 dark:text-white min-h-screen flex flex-col">
     <!-- Script to prevent FOUC -->
     <script is:inline>
       // Remove loading class when CSS is loaded
       document.body.classList.add('loading');
-      
+
       // Function to check if stylesheets are loaded
       function checkStylesheetsLoaded() {
         const styleSheets = document.styleSheets;
         let cssLoaded = false;
-        
+
         for (let i = 0; i < styleSheets.length; i++) {
           // Check if the stylesheet is our global.css
           if (styleSheets[i].href && styleSheets[i].href.includes('global.css')) {
@@ -207,11 +207,11 @@ const {
         }
         return cssLoaded;
       }
-      
+
       function revealContent() {
         document.body.classList.remove('loading');
       }
-      
+
       // Check if stylesheets are already loaded
       if (checkStylesheetsLoaded()) {
         revealContent();
@@ -225,7 +225,7 @@ const {
             setTimeout(revealContent, 100);
           }
         });
-        
+
         // Fallback in case other methods fail
         window.addEventListener('load', revealContent);
       }
@@ -233,14 +233,14 @@ const {
 
     <!-- Full-width header -->
     <Header />
-    
+
     <!-- Main content area with conditional width -->
     <main class="flex-grow w-full">
       <div class={wideContent ? "w-full" : "max-w-5xl mx-auto px-4 sm:px-6"}>
         <slot />
       </div>
     </main>
-    
+
     <!-- Full-width footer -->
     <Footer />
   </body>

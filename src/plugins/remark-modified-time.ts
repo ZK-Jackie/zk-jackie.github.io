@@ -2,7 +2,7 @@ import {execSync} from "child_process";
 
 
 export function remarkCreateTime() {
-  return function (tree: any, file: any) {
+  return function (_tree: any, file: any) {
     const filepath = file.history[0];
     let created = "";
     try {
@@ -26,7 +26,7 @@ export function remarkCreateTime() {
 }
 
 export function remarkModifiedTime() {
-  return function (tree: any, file: any) {
+  return function (_tree: any, file: any) {
     const filepath = file.history[0];
     const result = execSync(`git log -1 --pretty="format:%cI" "${filepath}"`);
     file.data.astro.frontmatter.modifiedTime = result.toString();

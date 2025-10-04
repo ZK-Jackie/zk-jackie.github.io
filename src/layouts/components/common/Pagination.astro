@@ -1,16 +1,21 @@
 ---
-// Props for the pagination component
-
 import Link from "./Link.astro";
+import { resolveUrl } from "../../../utils/pathUtils";
+
+
 interface Props {
   currentPage: number;
   totalPages: number;
-  prevUrl: string | null;
-  nextUrl: string | null;
+  prevUrl: Nullable<string>;
+  nextUrl: Nullable<string>;
   basePath: string;
 }
 
-const { currentPage, totalPages, prevUrl, nextUrl, basePath } = Astro.props;
+const {
+  currentPage, totalPages,
+  prevUrl, nextUrl, basePath
+} = Astro.props;
+const urlStyle = 'path'
 
 // Generate page numbers to display
 const pageNumbers = () => {
@@ -49,14 +54,13 @@ const pageNumbers = () => {
 
 // Generate the URL for a specific page
 const getPageUrl = (pageNum: number) => {
-  if (pageNum === 1) {
-    return basePath;
+  if (urlStyle === 'path') {
+    return resolveUrl(`${pageNum}`, basePath)
   }
-  return `${basePath}${basePath.endsWith('/') ? '' : '/'}page/${pageNum}/`;
 };
 ---
 
-{totalPages > 1 && (
+{totalPages >= 1 && (
   <nav aria-label="Pagination" class="my-8">
     <ul class="flex justify-center items-center space-x-2">
       <!-- Previous page button -->
@@ -64,7 +68,7 @@ const getPageUrl = (pageNum: number) => {
         {prevUrl ? (
           <Link href={prevUrl}
             class="flex items-center justify-center px-3 py-2 rounded-md border border-gray-300 dark:border-gray-700 text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors"
-            aria-label="Go to previous page"
+            aria-label="上一页"
           >
             <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
               <path fill-rule="evenodd" d="M12.707 5.293a1 1 0 010 1.414L9.414 10l3.293 3.293a1 1 0 01-1.414 1.414l-4-4a1 1 0 010-1.414l4-4a1 1 0 011.414 0z" clip-rule="evenodd" />
@@ -87,12 +91,11 @@ const getPageUrl = (pageNum: number) => {
       <!-- Page numbers -->
       {pageNumbers().map((pageNum) => (
         <li>
-          {pageNum === '...' ? (
+          {typeof pageNum !== 'number' ? (
             <span class="px-3 py-2 text-gray-500 dark:text-gray-400">...</span>
           ) : (
-            <Link href={getPageUrl(pageNum as number)}
-              class={`px-3 py-2 rounded-md ${currentPage === pageNum 
-                ? 'bg-blue-600 text-white dark:bg-blue-700 font-medium' 
+            <Link href={getPageUrl(pageNum)}
+              class={`px-3 py-2 rounded-md ${currentPage === pageNum ? 'bg-blue-600 text-white dark:bg-blue-700 font-medium' 
                 : 'text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800 border border-gray-300 dark:border-gray-700'} transition-colors`}
               aria-current={currentPage === pageNum ? 'page' : undefined}
             >
