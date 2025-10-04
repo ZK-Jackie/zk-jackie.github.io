@@ -2,7 +2,7 @@
   "name": "stack-explorer",
   "description": "Blog of ZK-Jackie, built with Astro",
   "type": "module",
-  "version": "1.0.0-alpha.5",
+  "version": "1.0.0-alpha.6",
   "author": "ZK-Jackie",
   "license": "MIT",
   "keywords": [
