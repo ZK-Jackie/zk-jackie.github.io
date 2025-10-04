@@ -201,8 +201,3 @@ export interface RobotsRules {
   // e.g., "https://example.com/sitemap.xml"
   sitemap?: string;
 }
-
-// 工具类型：递归的可选类型
-export type DeepPartial<T> = {
-  [P in keyof T]?: T[P] extends object ? DeepPartial<T[P]> : T[P];
-};

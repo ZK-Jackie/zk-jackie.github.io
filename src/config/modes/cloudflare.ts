@@ -1,4 +1,4 @@
-import type { ConfigValue, DeepPartial, SiteConfig } from "@config/types";
+import type { ConfigValue, SiteConfig } from "@config/types";
 import { fromEnvConfig } from "./utils.ts";
 
 

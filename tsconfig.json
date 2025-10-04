@@ -4,8 +4,12 @@
   "exclude": ["dist"],
   "compilerOptions": {
     "baseUrl": ".",
+    "typeRoots": ["src/types", "node_modules/@types"],
+    "types": ["vite/client", "astro/client", "src/types"],
     "paths": {
       "@/*": ["src/*"],
+      "@types": ["src/types/index.ts"],
+      "@types/*": ["src/types/*"],
       "@components/*": ["src/layouts/components/*"],
       "@layouts/*": ["src/layouts/*"],
       "@config": ["src/config/index.ts"],
@@ -15,9 +19,7 @@
       "@styles/*": ["src/styles/*"],
       "@assets/*": ["src/assets/*"],
       "@i18n/*": ["src/i18n/*"],
-      "@plugins/*": ["src/plugins/*"],
-      "jsx": ["react-jsx"],
-      "jsxImportSource": ["react"]
+      "@plugins/*": ["src/plugins/*"]
     }
   }
 }
