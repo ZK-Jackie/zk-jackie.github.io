@@ -2,7 +2,7 @@ import fs from 'fs'
 import path from 'path'
 
 /**
- * 压缩处理器（支持 Gzip 和 Brotli）
+ * Compression processor (supports Gzip and Brotli)
  */
 export class CompressionProcessor {
   constructor(config, fileFilter) {
@@ -17,17 +17,17 @@ export class CompressionProcessor {
   }
 
   /**
-   * 压缩文件
-   * @param {string} distPath - 构建输出目录
-   * @returns {Promise&lt;object&gt;} 处理统计信息
+   * Compress files
+   * @param {string} distPath - Build output directory
+   * @returns {Promise<object>} Processing statistics
    */
   async process(distPath) {
     if (!this.config.enabled) {
-      console.log(`ℹ️  ${this.config.algorithm} 压缩已跳过（已禁用）`)
+      console.log(`ℹ️  ${this.config.algorithm} compression skipped (disabled)`)
       return this.stats
     }
 
-    console.log(`🗜️ 正在生成 ${this.config.algorithm.toUpperCase()} 压缩文件...`)
+    console.log(`🗜️ Generating ${this.config.algorithm.toUpperCase()} compressed files...`)
 
     try {
       const zlib = await import('zlib')
@@ -39,7 +39,7 @@ export class CompressionProcessor {
         this.config.ignorePatterns
       )
 
-      // 过滤掉小于最小大小阈值的文件
+      // Filter out files smaller than minimum size threshold
       const eligibleFiles = files.filter(file => {
         try {
           const stat = fs.statSync(file)
@@ -49,7 +49,7 @@ export class CompressionProcessor {
         }
       })
 
-      console.log(`📄 找到 ${eligibleFiles.length} 个文件需要压缩`)
+      console.log(`📄 Found ${eligibleFiles.length} files to compress`)
       this.stats.fileCount = eligibleFiles.length
 
       for (const file of eligibleFiles) {
@@ -60,16 +60,16 @@ export class CompressionProcessor {
       return this.stats
 
     } catch (error) {
-      console.error(`❌ ${this.config.algorithm} 压缩失败:`, error.message)
+      console.error(`❌ ${this.config.algorithm} compression failed:`, error.message)
       this.stats.errors.push(error.message)
       return this.stats
     }
   }
 
   /**
-   * 获取压缩函数
-   * @param {object} zlib - zlib 模块
-   * @returns {Function} 压缩函数
+   * Get compression function
+   * @param {object} zlib - zlib module
+   * @returns {Function} Compression function
    */
   getCompressFunction(zlib) {
     switch (this.config.algorithm) {
@@ -82,15 +82,15 @@ export class CompressionProcessor {
           }
         })
       default:
-        throw new Error(`不支持的压缩算法: ${this.config.algorithm}`)
+        throw new Error(`Unsupported compression algorithm: ${this.config.algorithm}`)
     }
   }
 
   /**
-   * 处理单个文件
-   * @param {string} filePath - 文件路径
-   * @param {string} distPath - 基础路径
-   * @param {Function} compressFunction - 压缩函数
+   * Process single file
+   * @param {string} filePath - File path
+   * @param {string} distPath - Base path
+   * @param {Function} compressFunction - Compression function
    */
   async processFile(filePath, distPath, compressFunction) {
     try {
@@ -114,34 +114,34 @@ export class CompressionProcessor {
       }
 
     } catch (error) {
-      console.warn(`  ⚠️ 压缩失败: ${path.relative(distPath, filePath)} - ${error.message}`)
+      console.warn(`  ⚠️ Compression failed: ${path.relative(distPath, filePath)} - ${error.message}`)
       this.stats.errors.push(`${filePath}: ${error.message}`)
     }
   }
 
   /**
-   * 记录处理结果
+   * Log processing results
    */
   logResults() {
     if (this.stats.fileCount > 0) {
       const savings = this.stats.originalSize - this.stats.compressedSize
       const percent = this.stats.originalSize > 0 ? ((savings / this.stats.originalSize) * 100).toFixed(1) : '0'
       
-      console.log(`✨ ${this.config.algorithm.toUpperCase()} 压缩完成! 处理了 ${this.stats.fileCount} 个文件`)
-      console.log(`📊 压缩统计: ${this.formatBytes(this.stats.originalSize)} → ${this.formatBytes(this.stats.compressedSize)} (节省 ${this.formatBytes(savings)}, ${percent}%)`)
+      console.log(`✨ ${this.config.algorithm.toUpperCase()} compression completed! Processed ${this.stats.fileCount} files`)
+      console.log(`📊 Compression statistics: ${this.formatBytes(this.stats.originalSize)} → ${this.formatBytes(this.stats.compressedSize)} (saved ${this.formatBytes(savings)}, ${percent}%)`)
       
       if (this.stats.errors.length > 0) {
-        console.log(`⚠️ 遇到 ${this.stats.errors.length} 个错误`)
+        console.log(`⚠️ Encountered ${this.stats.errors.length} errors`)
       }
     } else {
-      console.log(`ℹ️  没有找到需要 ${this.config.algorithm} 压缩的文件`)
+      console.log(`ℹ️  No files found that need ${this.config.algorithm} compression`)
     }
   }
 
   /**
-   * 格式化字节数
-   * @param {number} bytes - 字节数
-   * @returns {string} 格式化后的字符串
+   * Format bytes
+   * @param {number} bytes - Number of bytes
+   * @returns {string} Formatted string
    */
   formatBytes(bytes) {
     if (bytes === 0) return '0 B'

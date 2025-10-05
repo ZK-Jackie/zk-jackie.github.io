@@ -3,7 +3,7 @@ import path from 'path'
 import { minify } from 'terser'
 
 /**
- * JavaScript 压缩处理器
+ * JavaScript compression processor
  */
 export class JavaScriptProcessor {
   constructor(config, fileFilter) {
@@ -18,17 +18,17 @@ export class JavaScriptProcessor {
   }
 
   /**
-   * 处理 JavaScript 文件压缩
-   * @param {string} distPath - 构建输出目录
-   * @returns {Promise&lt;object&gt;} 处理统计信息
+   * Process JavaScript file compression
+   * @param {string} distPath - Build output directory
+   * @returns {Promise<object>} Processing statistics
    */
   async process(distPath) {
     if (!this.config.enabled) {
-      console.log('ℹ️  JavaScript 压缩已跳过（已禁用）')
+      console.log('ℹ️  JavaScript compression skipped (disabled)')
       return this.stats
     }
 
-    console.log('⚡️ 正在压缩 JavaScript 文件...')
+    console.log('⚡️ Compressing JavaScript files...')
 
     try {
       const files = await this.fileFilter.findFiles(
@@ -37,7 +37,7 @@ export class JavaScriptProcessor {
         this.config.ignorePatterns
       )
 
-      console.log(`📄 找到 ${files.length} 个 JS 文件`)
+      console.log(`📄 Found ${files.length} JS files`)
       this.stats.fileCount = files.length
 
       for (const file of files) {
@@ -48,16 +48,16 @@ export class JavaScriptProcessor {
       return this.stats
 
     } catch (error) {
-      console.error('❌ JavaScript 压缩失败:', error.message)
+      console.error('❌ JavaScript compression failed:', error.message)
       this.stats.errors.push(error.message)
       return this.stats
     }
   }
 
   /**
-   * 处理单个 JavaScript 文件
-   * @param {string} filePath - 文件路径
-   * @param {string} distPath - 基础路径
+   * Process individual JavaScript file
+   * @param {string} filePath - File path
+   * @param {string} distPath - Base path
    */
   async processFile(filePath, distPath) {
     try {
@@ -77,37 +77,37 @@ export class JavaScriptProcessor {
           console.log(`  ✅ ${path.relative(distPath, filePath)} - ${this.formatBytes(originalSize)} → ${this.formatBytes(result.code.length)} (-${percent}%)`)
         }
       } else {
-        console.warn(`  ⚠️ 压缩失败: ${path.relative(distPath, filePath)} - 无输出代码`)
+        console.warn(`  ⚠️ Compression failed: ${path.relative(distPath, filePath)} - No output code`)
         this.stats.errors.push(`No output code for ${filePath}`)
       }
 
     } catch (error) {
-      console.warn(`  ⚠️ 压缩失败: ${path.relative(distPath, filePath)} - ${error.message}`)
+      console.warn(`  ⚠️ Compression failed: ${path.relative(distPath, filePath)} - ${error.message}`)
       this.stats.errors.push(`${filePath}: ${error.message}`)
     }
   }
 
   /**
-   * 记录处理结果
+   * Log processing results
    */
   logResults() {
     if (this.stats.fileCount > 0) {
       const savings = this.stats.originalSize - this.stats.compressedSize
       const percent = this.stats.originalSize > 0 ? ((savings / this.stats.originalSize) * 100).toFixed(1) : '0'
       
-      console.log(`✨ JavaScript 压缩完成! 处理了 ${this.stats.fileCount} 个文件`)
-      console.log(`📊 压缩统计: ${this.formatBytes(this.stats.originalSize)} → ${this.formatBytes(this.stats.compressedSize)} (节省 ${this.formatBytes(savings)}, ${percent}%)`)
+      console.log(`✨ JavaScript compression completed! Processed ${this.stats.fileCount} files`)
+      console.log(`📊 Compression stats: ${this.formatBytes(this.stats.originalSize)} → ${this.formatBytes(this.stats.compressedSize)} (saved ${this.formatBytes(savings)}, ${percent}%)`)
       
       if (this.stats.errors.length > 0) {
-        console.log(`⚠️ 遇到 ${this.stats.errors.length} 个错误`)
+        console.log(`⚠️ Encountered ${this.stats.errors.length} errors`)
       }
     }
   }
 
   /**
-   * 格式化字节数
-   * @param {number} bytes - 字节数
-   * @returns {string} 格式化后的字符串
+   * Format bytes
+   * @param {number} bytes - Number of bytes
+   * @returns {string} Formatted string
    */
   formatBytes(bytes) {
     if (bytes === 0) return '0 B'

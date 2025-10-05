@@ -1,10 +1,10 @@
 import fs from 'fs'
 import path from 'path'
-import picomatch from 'picomatch'
+import { glob } from 'glob'
 
 /**
- * 文件过滤器工具类
- * 使用 picomatch 提供灵活的文件匹配功能
+ * File filter utility class
+ * Provides efficient file matching using built-in features
  */
 export class FileFilter {
   constructor(globalIgnorePatterns = []) {
@@ -12,100 +12,114 @@ export class FileFilter {
   }
 
   /**
-   * 检查文件是否应该被忽略
-   * @param {string} filePath - 文件路径
-   * @param {string[]} patterns - 忽略模式数组
-   * @param {string} basePath - 基础路径，用于计算相对路径
-   * @returns {boolean} 是否应该忽略
+   * Check if file should be ignored
+   * @param {string} filePath - File path
+   * @param {string[]} patterns - Ignore pattern array
+   * @param {string} basePath - Base path for calculating relative path
+   * @returns {boolean} Whether should be ignored
    */
   shouldIgnore(filePath, patterns = [], basePath = '') {
     const allPatterns = [...this.globalIgnorePatterns, ...patterns]
     if (allPatterns.length === 0) return false
 
     const relativePath = basePath ? path.relative(basePath, filePath) : filePath
-    const normalizedPath = relativePath.replace(/\\/g, '/') // 统一使用 Unix 风格路径
+    const normalizedPath = relativePath.replace(/\\/g, '/') // Normalize to Unix-style paths
 
     return allPatterns.some(pattern => {
-      const matcher = picomatch(pattern)
-      return matcher(normalizedPath) || matcher(path.basename(filePath))
+      // Use simple glob pattern matching
+      return this.matchGlobPattern(pattern, normalizedPath) || 
+             this.matchGlobPattern(pattern, path.basename(filePath))
     })
   }
 
   /**
-   * 递归查找文件
-   * @param {string} dir - 搜索目录
-   * @param {string[]} extensions - 文件扩展名数组
-   * @param {string[]} ignorePatterns - 忽略模式数组
-   * @param {string} basePath - 基础路径
-   * @returns {Promise&lt;string[]&gt;} 文件路径数组
+   * Simple glob pattern matching
+   * @param {string} pattern - Glob pattern
+   * @param {string} text - Text to match
+   * @returns {boolean} Whether matches
    */
-  async findFiles(dir, extensions = [], ignorePatterns = [], basePath = null) {
-    basePath = basePath || dir
-    let results = []
-
-    try {
-      if (!fs.existsSync(dir)) {
-        return results
-      }
-
-      const list = fs.readdirSync(dir)
-
-      for (const file of list) {
-        const fullPath = path.join(dir, file)
-        
-        // 检查是否应该忽略这个文件/目录
-        if (this.shouldIgnore(fullPath, ignorePatterns, basePath)) {
-          continue
-        }
-
-        const stat = fs.statSync(fullPath)
-
-        if (stat && stat.isDirectory()) {
-          // 递归搜索子目录
-          const subResults = await this.findFiles(fullPath, extensions, ignorePatterns, basePath)
-          results = results.concat(subResults)
-        } else {
-          // 检查文件扩展名
-          if (this.matchesExtensions(file, extensions)) {
-            results.push(fullPath)
-          }
-        }
-      }
-    } catch (error) {
-      console.warn(`⚠️ 无法读取目录 ${dir}:`, error.message)
-    }
-
-    return results
+  matchGlobPattern(pattern, text) {
+    // Convert glob pattern to regex
+    const regexPattern = pattern
+      .replace(/\./g, '\\.')
+      .replace(/\*\*/g, '.*')
+      .replace(/\*/g, '[^/]*')
+      .replace(/\?/g, '[^/]')
+    
+    const regex = new RegExp(`^${regexPattern}$`, 'i')
+    return regex.test(text)
   }
 
   /**
-   * 检查文件是否匹配指定的扩展名
-   * @param {string} fileName - 文件名
-   * @param {string[]} extensions - 扩展名数组
-   * @returns {boolean} 是否匹配
+   * Recursively find files
+   * @param {string} dir - Search directory
+   * @param {string[]} extensions - File extension array
+   * @param {string[]} ignorePatterns - Ignore pattern array
+   * @param {string} basePath - Base path
+   * @returns {Promise<string[]>} File path array
+   */
+  async findFiles(dir, extensions = [], ignorePatterns = [], basePath = null) {
+    basePath = basePath || dir
+    
+    try {
+      // Build glob pattern
+      let globPattern = '**/*'
+      if (extensions.length > 0) {
+        if (extensions.length === 1) {
+          globPattern = `**/*${extensions[0]}`
+        } else {
+          // Multiple extensions use brace syntax
+          const exts = extensions.map(ext => ext.startsWith('.') ? ext : '.' + ext)
+          globPattern = `**/*{${exts.join(',')}}`
+        }
+      }
+      
+      // Merge ignore patterns
+      const allIgnorePatterns = [...this.globalIgnorePatterns, ...ignorePatterns]
+      
+      // Use glob to find files
+      const files = await glob(globPattern, {
+        cwd: dir,
+        absolute: true,
+        nodir: true,
+        ignore: allIgnorePatterns
+      })
+      
+      return files
+    } catch (error) {
+      console.warn(`⚠️ Unable to read directory ${dir}:`, error.message)
+      return []
+    }
+  }
+
+  /**
+   * Check if file matches specified extensions
+   * @param {string} fileName - File name
+   * @param {string[]} extensions - Extension array
+   * @returns {boolean} Whether matches
    */
   matchesExtensions(fileName, extensions) {
     if (!extensions || extensions.length === 0) return true
     
     return extensions.some(ext => {
-      // 支持通配符模式，如 "*.js"
+      // Support wildcard patterns like "*.js"
       if (ext.includes('*')) {
         const pattern = ext.replace(/\*/g, '.*') + '$'
         const regex = new RegExp(pattern, 'i')
         return regex.test(fileName)
       }
       
-      // 确保扩展名以点开头
+      // Ensure extension starts with dot
       const normalizedExt = ext.startsWith('.') ? ext : '.' + ext
       return fileName.toLowerCase().endsWith(normalizedExt.toLowerCase())
     })
   }
 
   /**
-   * 根据模式删除文件
-   * @param {string} baseDir - 基础目录
-   * @param {string[]} patterns - 文件模式数组
-   * @returns {Promise&lt;string[]&gt;} 被删除的文件路径数组
+   * Delete files by pattern
+   * @param {string} baseDir - Base directory
+   * @param {string[]} patterns - File pattern array
+   * @returns {Promise<string[]>} Array of deleted file paths
    */
   async removeFilesByPattern(baseDir, patterns) {
     const deletedFiles = []
@@ -119,11 +133,11 @@ export class FileFilter {
             fs.unlinkSync(file)
             deletedFiles.push(file)
           } catch (error) {
-            console.warn(`⚠️ 无法删除文件 ${file}:`, error.message)
+            console.warn(`⚠️ Unable to delete file ${file}:`, error.message)
           }
         }
       } catch (error) {
-        console.warn(`⚠️ 查找模式 "${pattern}" 失败:`, error.message)
+        console.warn(`⚠️ Pattern search failed "${pattern}":`, error.message)
       }
     }
 
@@ -131,37 +145,126 @@ export class FileFilter {
   }
 
   /**
-   * 使用模式查找文件
-   * @param {string} baseDir - 基础目录
-   * @param {string} pattern - 文件模式
-   * @returns {Promise&lt;string[]&gt;} 匹配的文件路径数组
+   * Find files using glob library
+   * @param {string} baseDir - Base directory
+   * @param {string} pattern - Glob pattern
+   * @returns {Promise<string[]>} Array of matching file paths
    */
   async findFilesByPattern(baseDir, pattern) {
-    const matcher = picomatch(pattern)
-    const results = []
-
-    const searchDir = async (dir) => {
-      try {
-        const list = fs.readdirSync(dir)
-
-        for (const file of list) {
-          const fullPath = path.join(dir, file)
-          const relativePath = path.relative(baseDir, fullPath).replace(/\\/g, '/')
-          const stat = fs.statSync(fullPath)
-
-          if (stat && stat.isDirectory()) {
-            await searchDir(fullPath)
-          } else if (matcher(relativePath) || matcher(file)) {
-            results.push(fullPath)
-          }
-        }
-      } catch (error) {
-        console.warn(`⚠️ 搜索目录 ${dir} 失败:`, error.message)
-      }
+    try {
+      // Ensure pattern is relative to baseDir
+      const globPattern = pattern.startsWith('/') ? pattern.slice(1) : pattern
+      
+      // Use glob library to find files
+      return await glob(globPattern, {
+        cwd: baseDir,
+        absolute: true,
+        nodir: true, // Return only files, not directories
+        ignore: this.globalIgnorePatterns
+      })
+    } catch (error) {
+      console.warn(`⚠️ Search pattern failed "${pattern}":`, error.message)
+      return []
     }
+  }
 
-    await searchDir(baseDir)
-    return results
+  /**
+   * Recursively traverse directory
+   * @param {string} dir - Directory path
+   * @param {Function} callback - Callback function receiving (filePath, stat) parameters
+   */
+  async walkDirectory(dir, callback) {
+    try {
+      const entries = await fs.promises.readdir(dir, { withFileTypes: true })
+      
+      for (const entry of entries) {
+        const fullPath = path.join(dir, entry.name)
+        
+        try {
+          const stat = await fs.promises.stat(fullPath)
+          
+          if (entry.isDirectory()) {
+            await callback(fullPath, stat)
+            await this.walkDirectory(fullPath, callback)
+          } else {
+            await callback(fullPath, stat)
+          }
+        } catch (error) {
+          // Ignore inaccessible files
+          continue
+        }
+      }
+    } catch (error) {
+      console.warn(`⚠️ Unable to read directory ${dir}:`, error.message)
+    }
+  }
+
+  /**
+   * Find files and potentially affected folders
+   * @param {string} baseDir - Base directory  
+   * @param {string} pattern - Glob pattern
+   * @returns {Promise<{files: string[], folders: string[]}>} Matching files and related folders
+   */
+  async findFilesAndFoldersByPattern(baseDir, pattern) {
+    try {
+      // Ensure pattern is relative to baseDir
+      const globPattern = pattern.startsWith('/') ? pattern.slice(1) : pattern
+      
+      // Use glob library to find files
+      const files = await glob(globPattern, {
+        cwd: baseDir,
+        absolute: true,
+        nodir: true,
+        ignore: this.globalIgnorePatterns
+      })
+      
+      // Also find potentially affected directories
+      const allPaths = await glob(globPattern, {
+        cwd: baseDir,
+        absolute: true,
+        ignore: this.globalIgnorePatterns
+      })
+      
+      // Collect folders containing these files
+      const folderSet = new Set()
+      
+      for (const file of files) {
+        let dir = path.dirname(file)
+        
+        // Traverse directory structure upward, add all potentially empty directories
+        while (dir !== baseDir && dir !== path.dirname(dir)) {
+          folderSet.add(dir)
+          dir = path.dirname(dir)
+        }
+      }
+      
+      // Add directories directly matched by glob, use Promise.all for efficiency
+      await Promise.all(allPaths.map(async (p) => {
+        try {
+          const stat = await fs.promises.stat(p)
+          if (stat.isDirectory()) {
+            folderSet.add(p)
+          }
+        } catch (error) {
+          // Ignore inaccessible paths
+        }
+      }))
+      
+      // Sort by depth, deeper directories first (should delete deeper directories first when deleting)
+      const folders = Array.from(folderSet).sort((a, b) => {
+        const depthA = a.split(path.sep).length
+        const depthB = b.split(path.sep).length
+        return depthB - depthA // Deeper depth first
+      })
+      
+      return {
+        files,
+        folders
+      }
+    } catch (error) {
+      console.warn(`⚠️ Failed to find files and folders:`, error.message)
+      return { files: [], folders: [] }
+    }
   }
 }
 

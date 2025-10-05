@@ -1,5 +1,5 @@
 /**
- * 统计报告处理器
+ * Statistics report processor
  */
 export class ReportProcessor {
   constructor(config) {
@@ -8,24 +8,23 @@ export class ReportProcessor {
   }
 
   /**
-   * 添加处理器统计信息
-   * @param {string} processorName - 处理器名称
-   * @param {object} stats - 统计信息
+   * Add processor statistics
+   * @param {string} processorName - Processor name
+   * @param {object} stats - Statistics information
    */
   addStats(processorName, stats) {
     this.allStats[processorName] = stats
   }
 
   /**
-   * 生成最终报告
-   * @param {string} distPath - 构建输出目录
+   * Generate final report
    */
-  generateReport(distPath) {
-    if (!this.config.enabled) {
+  generateReport() {
+    if (!this?.config || !this.config?.enabled) {
       return
     }
 
-    console.log('\n📊 构建后优化统计报告:')
+    console.log('\n📊 Post-build optimization statistics report:')
     console.log('=' .repeat(50))
 
     let totalOriginalSize = 0
@@ -33,7 +32,7 @@ export class ReportProcessor {
     let totalProcessedFiles = 0
     let totalErrors = 0
 
-    // 显示各个处理器的统计信息
+    // Display statistics for each processor
     Object.entries(this.allStats).forEach(([name, stats]) => {
       if (stats.fileCount > 0) {
         this.displayProcessorStats(name, stats)
@@ -48,31 +47,31 @@ export class ReportProcessor {
       }
     })
 
-    // 显示总体统计
-    console.log('\n📋 总体统计:')
-    console.log(`  📁 处理的文件总数: ${totalProcessedFiles}`)
+    // Display overall statistics
+    console.log('\n📋 Overall statistics:')
+    console.log(`  📁 Total files processed: ${totalProcessedFiles}`)
     
     if (totalOriginalSize > 0) {
       const totalSavings = totalOriginalSize - totalCompressedSize
       const totalPercent = ((totalSavings / totalOriginalSize) * 100).toFixed(1)
-      console.log(`  💾 文件大小优化: ${this.formatBytes(totalOriginalSize)} → ${this.formatBytes(totalCompressedSize)}`)
-      console.log(`  📈 总节省空间: ${this.formatBytes(totalSavings)} (${totalPercent}%)`)
+      console.log(`  💾 File size optimization: ${this.formatBytes(totalOriginalSize)} → ${this.formatBytes(totalCompressedSize)}`)
+      console.log(`  📈 Total space saved: ${this.formatBytes(totalSavings)} (${totalPercent}%)`)
     }
     
     if (totalErrors > 0) {
-      console.log(`  ⚠️ 总错误数: ${totalErrors}`)
+      console.log(`  ⚠️ Total errors: ${totalErrors}`)
     }
 
-    // 显示性能建议
+    // Display performance recommendations
     this.displayRecommendations()
 
-    console.log('\n✨ 构建后优化完成!')
+    console.log('\n✨ Post-build optimization completed!')
   }
 
   /**
-   * 显示单个处理器的统计信息
-   * @param {string} name - 处理器名称
-   * @param {object} stats - 统计信息
+   * Display statistics for individual processor
+   * @param {string} name - Processor name
+   * @param {object} stats - Statistics information
    */
   displayProcessorStats(name, stats) {
     const emoji = this.getEmojiForProcessor(name)
@@ -81,30 +80,30 @@ export class ReportProcessor {
     if (stats.originalSize !== undefined && stats.compressedSize !== undefined) {
       const savings = stats.originalSize - stats.compressedSize
       const percent = stats.originalSize > 0 ? ((savings / stats.originalSize) * 100).toFixed(1) : '0'
-      console.log(`  📄 处理文件: ${stats.fileCount} 个`)
-      console.log(`  📦 压缩前: ${this.formatBytes(stats.originalSize)}`)
-      console.log(`  📦 压缩后: ${this.formatBytes(stats.compressedSize)}`)
-      console.log(`  💰 节省空间: ${this.formatBytes(savings)} (${percent}%)`)
+      console.log(`  📄 Files processed: ${stats.fileCount}`)
+      console.log(`  📦 Before compression: ${this.formatBytes(stats.originalSize)}`)
+      console.log(`  📦 After compression: ${this.formatBytes(stats.compressedSize)}`)
+      console.log(`  💰 Space saved: ${this.formatBytes(savings)} (${percent}%)`)
     } else if (stats.fileCount > 0) {
-      console.log(`  📄 处理文件: ${stats.fileCount} 个`)
+      console.log(`  📄 Files processed: ${stats.fileCount}`)
     }
     
     if (stats.errors && stats.errors.length > 0) {
-      console.log(`  ⚠️ 错误: ${stats.errors.length} 个`)
+      console.log(`  ⚠️ Errors: ${stats.errors.length}`)
       if (this.config.showFileDetails) {
         stats.errors.slice(0, 3).forEach(error => {
           console.log(`    • ${error}`)
         })
         if (stats.errors.length > 3) {
-          console.log(`    • ... 还有 ${stats.errors.length - 3} 个错误`)
+          console.log(`    • ... and ${stats.errors.length - 3} more errors`)
         }
       }
     }
   }
 
   /**
-   * 获取处理器对应的 emoji
-   * @param {string} name - 处理器名称
+   * Get emoji for processor
+   * @param {string} name - Processor name
    * @returns {string} emoji
    */
   getEmojiForProcessor(name) {
@@ -121,28 +120,28 @@ export class ReportProcessor {
   }
 
   /**
-   * 获取处理器显示名称
-   * @param {string} name - 处理器名称
-   * @returns {string} 显示名称
+   * Get display name for processor
+   * @param {string} name - Processor name
+   * @returns {string} Display name
    */
   getDisplayName(name) {
     const displayNames = {
-      javascript: 'JavaScript 压缩',
-      html: 'HTML 压缩',
-      css: 'CSS 压缩',
-      cleanup: '文件清理',
-      gzip: 'Gzip 压缩',
-      brotli: 'Brotli 压缩',
-      compression: '文件压缩'
+      javascript: 'JavaScript compression',
+      html: 'HTML compression',
+      css: 'CSS compression',
+      cleanup: 'File cleanup',
+      gzip: 'Gzip compression',
+      brotli: 'Brotli compression',
+      compression: 'File compression'
     }
     return displayNames[name] || name
   }
 
   /**
-   * 显示性能建议
+   * Display performance recommendations
    */
   displayRecommendations() {
-    console.log('\n💡 性能建议:')
+    console.log('\n💡 Performance recommendations:')
     
     const jsStats = this.allStats.javascript
     const htmlStats = this.allStats.html
@@ -151,26 +150,26 @@ export class ReportProcessor {
     if (jsStats && jsStats.fileCount > 0) {
       const jsPercent = jsStats.originalSize > 0 ? ((jsStats.originalSize - jsStats.compressedSize) / jsStats.originalSize * 100) : 0
       if (jsPercent < 20) {
-        console.log('  📝 JavaScript 压缩率较低，考虑检查是否有未压缩的第三方库')
+        console.log('  📝 JavaScript compression rate is low, consider checking for uncompressed third-party libraries')
       }
     }
     
     if (htmlStats && htmlStats.fileCount > 0) {
-      console.log('  🌐 HTML 文件已压缩，考虑启用服务器端 Gzip/Brotli 压缩')
+      console.log('  🌐 HTML files are compressed, consider enabling server-side Gzip/Brotli compression')
     }
     
     if (gzipStats && gzipStats.fileCount > 0) {
-      console.log('  🚀 已生成预压缩文件，记得在 Web 服务器中配置静态文件压缩')
-      console.log('  📖 Nginx 配置示例: gzip_static on; brotli_static on;')
+      console.log('  🚀 Pre-compressed files generated, remember to configure static file compression in your web server')
+      console.log('  📖 Nginx config example: gzip_static on; brotli_static on;')
     }
     
-    console.log('  🔍 定期检查 bundle 大小分析，移除未使用的依赖')
+    console.log('  🔍 Regularly check bundle size analysis, remove unused dependencies')
   }
 
   /**
-   * 格式化字节数
-   * @param {number} bytes - 字节数
-   * @returns {string} 格式化后的字符串
+   * Format bytes
+   * @param {number} bytes - Number of bytes
+   * @returns {string} Formatted string
    */
   formatBytes(bytes) {
     if (bytes === 0) return '0 B'

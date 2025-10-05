@@ -12,19 +12,21 @@
     "typescript"
   ],
   "repository": "https://github.com/ZK-Jackie/zk-jackie.github.io",
+  "packageManager": "pnpm@10.18.0",
   "scripts": {
     "dev": "set NODE_ENV=development && astro dev --mode development",
     "build:dev": "astro build --mode development",
-    "build:dev:compressed": "astro build --mode development && node scripts/postbuild.js",
-    "build:prod": "set NODE_ENV=production && astro build --mode production && node scripts/postbuild.js",
-    "build:cf": "set NODE_ENV=cloudflare && astro build --mode cloudflare && node scripts/postbuild.js",
-    "build:gh": "set NODE_ENV=github && astro build --mode github && node scripts/postbuild.js",
-    "build": "astro build",
+    "build:prod": "set NODE_ENV=production && astro build --mode production && pnpm run compress",
+    "build:cf": "set NODE_ENV=cloudflare && astro build --mode cloudflare && pnpm run compress",
+    "build:gh": "set NODE_ENV=github && astro build --mode github && pnpm run compress",
+    "build": "pnpm run build:dev",
     "preview": "astro preview",
     "check": "astro check",
     "sync": "astro sync",
     "astro": "astro",
-    "astro-upgrade": "pnpm dlx @astrojs/upgrade"
+    "astro-upgrade": "pnpm dlx @astrojs/upgrade",
+    "compress": "set NODE_TARGET=compression && node scripts/main.js",
+    "clean": "set NODE_TARGET=cleanup && node scripts/main.js"
   },
   "dependencies": {
     "@astrojs/markdown-remark": "^6.3.7",
@@ -40,6 +42,7 @@
     "astro-expressive-code": "^0.41.3",
     "astro-icon": "^1.1.5",
     "fuse.js": "^7.1.0",
+    "glob": "^11.0.3",
     "hast-util-from-html": "^2.0.3",
     "hast-util-select": "^6.0.4",
     "hast-util-to-string": "^3.0.1",
