@@ -12,7 +12,6 @@
     "typescript"
   ],
   "repository": "https://github.com/ZK-Jackie/zk-jackie.github.io",
-  "packageManager": "pnpm@10.18.0",
   "scripts": {
     "dev": "set NODE_ENV=development && astro dev --mode development",
     "build:dev": "astro build --mode development",
