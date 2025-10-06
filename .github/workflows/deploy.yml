@@ -9,6 +9,7 @@ permissions:
   contents: read      # 允许读取仓库内容（代码、文件等）
   pages: write        # 允许写入 GitHub Pages（部署静态网站）
   id-token: write     # 允许创建 OIDC 身份令牌（用于安全认证）
+  deployments: write  # 允许创建和管理部署（部署应用或服务）
 
 jobs:
   build:
@@ -39,10 +40,19 @@ jobs:
         run: pnpm run build:gh
 
       # 上传文件夹时的 path，末尾有无 “/” 效果一致；actions/upload-pages-artifact 在普通的 upload 基础上多了一步打包
-      - name: Upload Pages Artifact
+      - name: Upload Github Pages Artifact
         uses: actions/upload-pages-artifact@v4
         with:
           path: "./dist/"
+
+#      - name: Build site for Cloudflare Pages
+#        run: pnpm run build:cf
+#
+#      - name: Upload Cloudflare Pages Artifact
+#        uses: actions/upload-artifact@v4
+#        with:
+#          name: cf-pages
+#          path: './dist'
 
       - name: Create env file for Production
         run: |
@@ -72,6 +82,34 @@ jobs:
       - name: Deploy to GitHub Pages
         id: deployment
         uses: actions/deploy-pages@v4
+
+#  deploy-cf:
+#    name: Deploy to Cloudflare Pages
+#    needs: build
+#    runs-on: ubuntu-latest
+#    steps:
+#      - name: Download artifact
+#        uses: actions/download-artifact@v5
+#        with:
+#          name: cf-pages
+#          path: 'dist'
+#
+#      - name: Deploy
+#        uses: cloudflare/wrangler-action@v3
+#        env:
+#          PNPM_VERSION: 10.18.0
+#        with:
+#          apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+#          accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+#          command: pages deploy ./dist --project-name=zk-jackie-github-io
+#          gitHubToken: ${{ secrets.GITHUB_TOKEN }}
+#          vars: |
+#            PNPM_VERSION
+#
+#      - name: Remove artifact
+#        uses: geekyeggo/delete-artifact@v5
+#        with:
+#          name: cf-pages
 
   deploy-production:
     name: Deploy to Production Server

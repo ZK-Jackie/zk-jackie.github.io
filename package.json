@@ -2,7 +2,7 @@
   "name": "stack-explorer",
   "description": "Blog of ZK-Jackie, built with Astro",
   "type": "module",
-  "version": "1.0.0-alpha.6",
+  "version": "1.0.0-alpha.7",
   "author": "ZK-Jackie",
   "license": "MIT",
   "keywords": [
@@ -13,19 +13,19 @@
   ],
   "repository": "https://github.com/ZK-Jackie/zk-jackie.github.io",
   "scripts": {
-    "dev": "set NODE_ENV=development && astro dev --mode development",
+    "dev": "astro dev --mode development",
     "build:dev": "astro build --mode development",
-    "build:prod": "set NODE_ENV=production && astro build --mode production && pnpm run compress",
-    "build:cf": "set NODE_ENV=cloudflare && astro build --mode cloudflare && pnpm run compress",
-    "build:gh": "set NODE_ENV=github && astro build --mode github && pnpm run compress",
+    "build:prod": "astro build --mode production && pnpm run compress",
+    "build:cf": "astro build --mode cloudflare && pnpm run compress",
+    "build:gh": "astro build --mode github && pnpm run compress",
     "build": "pnpm run build:dev",
     "preview": "astro preview",
     "check": "astro check",
     "sync": "astro sync",
     "astro": "astro",
     "astro-upgrade": "pnpm dlx @astrojs/upgrade",
-    "compress": "set NODE_TARGET=compression && node scripts/main.js",
-    "clean": "set NODE_TARGET=cleanup && node scripts/main.js"
+    "compress": "node scripts/main.js --target compression",
+    "clean": "node scripts/main.js --target cleanup"
   },
   "dependencies": {
     "@astrojs/markdown-remark": "^6.3.7",
@@ -40,6 +40,7 @@
     "astro": "5.14.1",
     "astro-expressive-code": "^0.41.3",
     "astro-icon": "^1.1.5",
+    "commander": "^14.0.1",
     "fuse.js": "^7.1.0",
     "glob": "^11.0.3",
     "hast-util-from-html": "^2.0.3",

@@ -1,3 +1,5 @@
+import { target } from "./cli.js";
+
 export const config = {
   // Global configuration
   global: {
@@ -144,19 +146,9 @@ export const config = {
 
 // Environment-specific configuration overrides
 function applyEnvironmentOverrides(baseConfig) {
-  let buildTarget;
-  try {
-    buildTarget = process.env.NODE_TARGET.trim()
-  } catch (error) {
-    if (process.env.NODE_TARGET === undefined) {
-      console.error("❌ Error: NODE_TARGET environment variable is not set. Please set NODE_TARGET to 'compression' or 'cleanup'.")
-      process.exit(1)
-    }
-    console.error("❌ Error: " + error.message)
-    process.exit(1)
-  }
-
+  const buildTarget = target
   let finalConfig;
+
   if (buildTarget === 'cleanup') {
     finalConfig = {
       global: {
