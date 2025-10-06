@@ -101,7 +101,7 @@
     },
     {
       "key": "Nginx",
-      "slug": "nginx", 
+      "slug": "nginx",
       "labels": {
         "zh": "Nginx",
         "en": "Nginx"
@@ -157,6 +157,14 @@
       "description": {
         "zh": "图数据库相关技术",
         "en": "Graph database related technologies"
+      }
+    },
+    {
+      "key": "面试题",
+      "slug": "interview",
+      "labels": {
+        "zh": "面试题",
+        "en": "Interview"
       }
     }
   ]
