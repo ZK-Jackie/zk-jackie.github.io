@@ -36,9 +36,6 @@ jobs:
       - name: Install dependencies
         run: pnpm install --loglevel=warn --prod
 
-      - name: Install playwright browsers
-        run: pnpm exec playwright install --with-deps chromium
-
       - name: Build site for GitHub Pages
         run: pnpm run build:gh
 
