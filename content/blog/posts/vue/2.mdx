@@ -5,7 +5,9 @@ description: "常见的 Vue 面试题与核心功能实现原理解析"
 authors: ["Jackie"]
 categories: ["Web 开发"]
 tags: ["前端", "Vue", "Vue2", "Vue3", "面试题"]
+showtoc: [[2,4]]
 series: ["前端开发与面试", "2"]
+
 ---
 
 ## 1 技术相关
@@ -17,13 +19,13 @@ series: ["前端开发与面试", "2"]
 
 1. 优缺点
 
-|           | 单页面应用（SPA） | 多页面应用（MPA）       |
-|-----------|------------|------------------|
-| 组成        | 一个主页面和页面组件 | 多个完整的页面          |
-| 刷新方式      | 局部刷新       | 整页刷新             |
-| SEO搜索引擎优化 | 无法实现       | 容易实现             |
-| 页面切换      | 速度快，用户体验良好 | 切换加载资源，速度慢，用户体验差 |
-| 维护成本      | 相对容易       | 相对复杂             |
+|                 | 单页面应用（SPA）    | 多页面应用（MPA）                |
+| --------------- | -------------------- | -------------------------------- |
+| 组成            | 一个主页面和页面组件 | 多个完整的页面                   |
+| 刷新方式        | 局部刷新             | 整页刷新                         |
+| SEO搜索引擎优化 | 无法实现             | 容易实现                         |
+| 页面切换        | 速度快，用户体验良好 | 切换加载资源，速度慢，用户体验差 |
+| 维护成本        | 相对容易             | 相对复杂                         |
 
 2. 解决方案
 
@@ -41,11 +43,11 @@ series: ["前端开发与面试", "2"]
 
 在 Vue 中，`$parent`、`$children`和 `$root`是**组件实例属性**，用于访问组件的层级关系。它们反映了 Vue 的组件树架构。Vue 2 和 Vue 3 在访问方式上出现了一些区别，具体如下表：
 
-| 属性              | 用途                       | Vue 2 支持 | Vue 3 支持 | 注意事项                                  |
-|:----------------|:-------------------------|:---------|:---------|:--------------------------------------|
-| **`$parent`**   | 访问**父组件实例**（直接上级）        | ✅        | ✅（但慎用）   | 父组件可能动态变化（如 `v-if`切换），强耦合会导致代码脆弱      |
-| **`$children`** | 访问**子组件实例数组**（直接下级）      | ✅        | ❌ 移除     | 顺序不保证与模板一致，且包含所有类型的 VNode（如普通元素）      |
-| **`$root`**     | 访问**根组件实例**（最顶层的 Vue 实例） | ✅        | ✅        | 在多应用实例场景下（`createApp`多次调用），返回当前应用的根实例 |
+| 属性            | 用途                                    | Vue 2 支持 | Vue 3 支持  | 注意事项                                                     |
+| :-------------- | :-------------------------------------- | :--------- | :---------- | :----------------------------------------------------------- |
+| **`$parent`**   | 访问**父组件实例**（直接上级）          | ✅          | ✅（但慎用） | 父组件可能动态变化（如 `v-if`切换），强耦合会导致代码脆弱    |
+| **`$children`** | 访问**子组件实例数组**（直接下级）      | ✅          | ❌ 移除      | 顺序不保证与模板一致，且包含所有类型的 VNode（如普通元素）   |
+| **`$root`**     | 访问**根组件实例**（最顶层的 Vue 实例） | ✅          | ✅           | 在多应用实例场景下（`createApp`多次调用），返回当前应用的根实例 |
 
 
 在 Vue 2 中，普通组件是通过 `new VueComponent()`实例化的，会形成完整的组件实例树，对应地会将组件加入到`$parent`、`$children`属性中：
@@ -102,6 +104,39 @@ export default {
 
 
 
+#### 虚拟 DOM 和真实 DOM
+
+##### （1）基本概念
+
+虚拟DOM（Virtual DOM）是前端框架（如 React、Vue 等）用来优化页面渲染性能的一种技术。它本质上是一个轻量级的 **JavaScript 对象**，用来描述真实 DOM 的结构和状态。
+
+**真实 DOM**：浏览器中实际存在的树形结构（如 HTML 元素），操作成本高。
+
+**虚拟 DOM**：框架内部维护的 JS 对象树，是真实 DOM 的抽象表示。
+
+##### （2）工作流程
+
+1. **初始化**：当数据变化时，框架会生成一个新的虚拟 DOM 树（VDOM）。
+2. **对比（Diffing）**：比较新旧 VDOM 树的差异（React 的 Reconciliation / Vue 的 patching）。
+3. **批量更新（Patching）**：仅将差异部分应用到真实 DOM，避免全量更新。
+
+##### （3）常见问题
+
+<Accordion label="在了解了虚拟 DOM 和真实 DOM 的概念后，很容易产生一个疑问，最终都是要调用 `document.*` 接口、进行重新渲染，又能够有多大好处？" group="2-0-2-3-1">
+
+**核心观点：虚拟DOM的性能优势不在于它比直接操作DOM更快，而在于它提供了一种更智能、更高效的方式来<u>最小化对真实DOM的操作次数和范围</u>，从而在复杂应用中带来显著的性能提升。**
+
+1. 的确，最终都需要操作真实 DOM 来更新界面，直接操作DOM（比如使用 `document.createElement`, `appendChild`, `innerHTML`或直接修改属性）在**非常小规模、简单**的更新上，可能比虚拟DOM更快，因为它避免了创建虚拟DOM树和Diff的过程。
+2. **关键点在于 DOM 操作本身是非常昂贵的。** 浏览器渲染引擎的工作流程（布局计算、重绘、重排）代价高昂。频繁地、细粒度地直接修改 DOM，尤其是在复杂应用中，会导致大量的、不必要的重排和重绘，这是性能瓶颈的主要来源。
+3. 使用虚拟 DOM 后有不可替代的场景优势：
+    - 优势之一是**批处理**。当应用状态发生变化时，框架（如React）不会立即去修改真实DOM。它首先在内存中构建一个新的虚拟DOM树（这是一个轻量的JavaScript对象操作，非常快）；然后，框架会**比较（Diff）**新的虚拟DOM树和上一次渲染的旧虚拟DOM树，找出两者之间的**最小差异集**；最后，框架会将这些差异**打包成一个 patch，一次性应用**到真实DOM上。这大大减少了昂贵的DOM操作（重排/重绘）的触发次数。
+    - 优势之二是**最小化变更**。Diff 算法的使用使得框架能够精确地计算出**哪些节点需要更新、添加或删除**，**只修改实际发生变化的部分**，避免了大量无谓的DOM操作
+    - 优势之三是加强了应用的**跨平台性**。虚拟 DOM 是一个 JavaScript 对象树，它**抽象了渲染目标**。Vue 的核心算法（响应式、编译、虚拟 DOM Diff）并不直接依赖浏览器 DOM，这使得 Vue 能够通过不同的**渲染器 (Renderer)** 将虚拟 DOM 树渲染到不同平台，例如`@vue/runtime-dom` 渲染到浏览器 DOM，`@vue/runtime-test` 渲染到纯 JavaScript 对象，用于测试，`@vue/runtime-canvas` (社区或自定义) 渲染到 Canvas
+
+</Accordion>
+
+
+
 #### Vue 中的设计模式
 
 - 单例模式：单例模式就是整个程序有且仅有一个实例（Vuex 中的 store）
@@ -125,7 +160,7 @@ export default {
 
 1. 声明式框架
 
-<u>命令式</u>是例如以前 DOM 那样的，十分流程化；声明式则重点关注操作的过程，让开发核心回归到数据渲染和获取上
+命令式是例如以前 DOM 那样的，十分流程化；声明式则重点关注操作的过程，让开发核心回归到数据渲染和获取上
 
 2. 借鉴 MVVM 模式
 
@@ -145,7 +180,7 @@ export default {
 
 ### 2.2 Vue 2.0 和 Vue 3.0 的区别
 
-**1. 架构与性能优化**
+（1）架构与性能优化
 
 **响应式系统重写**
 
@@ -159,23 +194,25 @@ export default {
     - 能检测到属性的添加和删除
     - 对数组的变化检测更自然
 
-**虚拟DOM重写**
+**虚拟 DOM 重写**
 
-- 优化了diff算法，提升了渲染性能
+- 优化了 diff 算法，提升了渲染性能
 - 编译时优化，生成更高效的代码
 
 **更小的体积**
 
 - Vue 3.0 核心库体积比 Vue 2.x 小约40%
+
 - 通过 Tree-shaking 支持按需引入，未使用的功能不会打包
 
 
 
-**2. Composition API**
+（2）Composition API
 
 - **Vue 2.x**：Options API
     - 基于选项的组织方式 (data, methods, computed等)
     - 逻辑分散在不同选项中，大型组件难以维护
+
 - **Vue 3.x**：引入Composition API
     - 基于函数的API，更好的逻辑复用
     - 相关逻辑可以组织在一起
@@ -183,7 +220,7 @@ export default {
     - 更好的 TypeScript 支持
 
 ```vue
-<!-- Options API -->
+<!-- Vue2OptionsApi.vue -->
 <template>
   <div>
     <p>{{ count }}</p>
@@ -222,7 +259,7 @@ export default {
 
 
 ```vue
-<!-- Vue 3 Composition API 示例 -->
+<!-- Vue3CompositionApi.vue-->
 <template>
   <div>
     <p>{{ count }}</p>
@@ -260,7 +297,7 @@ export default {
 ```
 
 ```vue
-<!--  Vue 3 Composition API setup 语法糖示例 -->
+<!-- Vue3SetupAttr.vue -->
 <script setup>
 import { ref, computed, onMounted } from 'vue'
 const count = ref(0)
@@ -274,18 +311,20 @@ onMounted(() => {
 </script>
 ```
 
-**3. TypeScript支持**
+（3）TypeScript支持
 
 - **Vue 2.x**：对 TypeScript 支持有限
     - Options API 设计导致类型推断困难
-    - 需要依赖 vue-class-component 等装饰器
+    - 需要依赖 `vue-class-component` 等装饰器
 
 - **Vue 3.x**：完全用 TypeScript 重写
     - 提供更好的类型推断
     - Composition API 天然适合 TypeScript
     - 开发体验大幅提升
 
-**4. 其他新特性**
+
+
+（4）其他新特性
 
 **片段(Fragments)**
 
@@ -300,7 +339,9 @@ onMounted(() => {
 </template>
 ```
 
-**Teleport 组件**
+**内置内置组件：Teleport 组件**
+
+[Teleport | Vue.js](https://cn.vuejs.org/guide/built-ins/teleport.html)
 
 - 新增`<teleport>`组件，可以将子节点渲染到DOM中的其他位置
 
@@ -313,7 +354,9 @@ onMounted(() => {
 </template>
 ```
 
-**Suspense 组件**
+**内置内置组件：Suspense 组件**
+
+[Suspense | Vue.js](https://cn.vuejs.org/guide/built-ins/suspense.html)
 
 - 新增实验性的`<Suspense>`组件，可以处理异步依赖
 
@@ -332,7 +375,7 @@ onMounted(() => {
 
 
 
-**5. 生命周期变化**
+（5）生命周期名称变化
 
 - Vue 3.x 生命周期钩子名称变化：
     - `beforeDestroy` → `beforeUnmount`
@@ -340,7 +383,7 @@ onMounted(() => {
 
 - 新增`renderTracked`和`renderTriggered`调试钩子
 
-详细见 [2.13](#2-13-Vue-的声明周期与用法)
+详细见 [2.12](#2-12-Vue-的生命周期与用法)
 
 
 
@@ -450,7 +493,13 @@ Vue 的 diff 算法是基于 Snabbdom 改进而来，是一种高效的虚拟 DO
 
 标准回答：
 
-1. 响应式系统**只能知道哪些数据发生了变化**，但**不知道这些数据变化如何影响 DOM**，一个数据变化可能影响多个 DOM 节点，也可能多个数据变化只影响一个 DOM 节点
+1. Vue 能精准探测数据变化，但是**不能得知数据变化后组件如何渲染**。
+
+   首先，Vue 的响应式系统追踪的是**组件实例对数据的依赖**。当一个响应式数据变化时，Vue 知道哪些组件实例需要重新渲染（`render`函数需要重新执行）。
+
+   接着，**`render`函数生成的是整个组件的 VNode 树：** 组件的 `render`函数（无论是模板编译而来还是手写的）负责描述该组件**当前状态**下应该呈现的整个视图结构。它输出的是一个完整的**虚拟 DOM 树 (VNode Tree)**，代表该组件的 UI。
+
+   总结：响应式系统**只能知道哪些数据发生了变化**，**只能知道哪些组件脏了**，但**不知道选然后组件会发生什么变化**，一个数据变化可能影响多个 DOM 节点，也可能多个数据变化只影响一个 DOM 节点，特别是对于数组更新的场景，结果更加不可预知，则还需要通过 diff 算法进一步计算得到 patch。
 
 2. 要实现题目那样的做法，也就是说对每一个属性都要准备一个 watcher，但是页面上面可能会有很多很多个属性，这样内存消耗巨大
 
@@ -575,7 +624,7 @@ watch 则是监控值的变化，当值发生变化时调用对应的回调函�
 
 
 
-#### 2.6.4 provide 和 inject
+#### 2.6.3 provide 和 inject
 
 组件树的某个**上层组件**（不能同层）中调用了 `provide`，任何位于其**下层的组件**（无论嵌套多深）都可以通过 `inject`获取该值。这是 Vue 的依赖注入系统的核心设计。
 
@@ -695,99 +744,255 @@ Vue 3 过程：
 
 
 
-Vue2：
+Vue 2：
 
-<img src=".\vue面试.assets\lifecycle.png" alt="Vue 实例生命周期" style="zoom: 50%;" />
+<img src="https://oss-docs.zk-jackie.top/2025/10/6f2c97f045ba988851b02056c01c8d62.png" alt="Vue 实例生命周期" style="zoom: 50%;" />
 
 
 
-Vue3：
+Vue 3：
 
-<img src=".\vue面试.assets\lifecycle_zh-CN.W0MNXI0C.png" alt="组件生命周期图示" style="zoom:80%;" />
+<img src="https://oss-docs.zk-jackie.top/2025/10/b27bd3079c6bb58d348c8b1cede64b9c.png" alt="组件生命周期图示" style="zoom:80%;" />
 
-### 2.13 Vue 指令/接口合集
+### 2.13 其他 Vue 指令/接口
 
 #### 2.13.1 Vue.set
 
-[Vue.set 源代码（第228行）](https://github1s.com/vuejs/vue/blob/main/src/core/observer/index.ts#L223)
+[Vue.set 源代码](https://github1s.com/vuejs/vue/blob/main/src/core/observer/index.ts#L223-L276)
 
-`Vue.set` 存在的核心是解决目标属性不是响应式、添加的属性无法变成响应式的问题
+##### （1）解决的问题
 
-1. 参数校验：首先会检查要设置的目标对象是否合法——是否为空或是否为基础类型
+`Vue.set` 存在的核心是解决目标对象的**属性不是响应式、添加的属性无法变成响应式**的问题。
 
-    - 如果是目标对象是数组，则使用自己 Vue 后的 splice 方法，修改数组属性的同时通知视图更新
+由于 Vue 2 使用 `Object.defineProperty`实现响应式，但**无法检测对象属性的新增或删除**。直接赋值新属性 (`obj.newProp = value`) 不会触发更新 ，因而必须借助其他手段实现新属性的监听。
+
+##### （2）工作流程
+
+1. 参数校验：首先会检查所给的目标对象是否合法——是否为空或是否为基础类型
+
+    - 如果是目标对象是数组，则使用自己 Vue 重写后的 splice 方法，修改数组属性的同时通知视图更新
     - 如果属性本身就具有这个属性，则直接添加
 
-2. 取目标的 `__ob__` 属性，为后续判定是否响应式、和获取响应式配置参数做准备
+2. 取目标对象的 `__ob__` 属性，为后续判定是否响应式、和获取响应式配置参数做准备
 
-3. 修改目标的值
+3. 修改目标对象的属性
 
-    - 如果目标是数组，首先调整数组长度确保索引有效；使用 `splice`修改数组（Vue 2 重写了 `splice`，能触发响应式更新）；如果是 SSR 的 mock 模式且非浅响应式，对新值进行响应式处理
+    - 如果目标对象的属性是数组，首先调整数组长度确保索引有效；使用 `splice` 修改数组（Vue 2 重写了 `splice`，能触发响应式更新）；如果是 SSR 的 mock 模式且非浅响应式，对新值进行响应式处理
 
-    - 如果属性是否已存在于目标对象（且**非原型链上的属性**），直接赋值（setter 会自动触发响应式更新）
+    - 如果目标对象的属性是否已存在于目标对象（且**非原型链上的属性**），直接赋值（setter 会自动触发响应式更新）
 
       > Vue 2中若继承了别人的属性，第一次读的时候读的是链上的；第一次写的时候会自动创建一个响应式的，并且”遮蔽“链上的同名属性（走的是这里文档描述的最后一条逻辑）。
-    >
-    >
 
-    - 如果目标是Vue 实例或根级 `data`对象，警告但不操作
+- 如果目标对象是Vue 实例或根级 `data`对象，警告，不操作
 
-    - 如果目标不是响应式的，直接赋值（也不管渲染问题了）
+- 如果目标对象不是响应式的，直接赋值（也不管渲染问题了）
 
-    - 如果目标均不符合上述条件，则把将要赋予的属性（新属性）定义成响应式的，随后通知视图更新
+- 如果目标对象均不符合上述条件，则把将要赋予的属性（新属性）定义成响应式的，随后通知视图更新
+
+##### （3）示例代码
+
+```javascript
+const vm = new Vue({
+  data: { user: { name: 'Alice' } }
+});
+// ❌ 错误：不会触发响应式更新
+vm.user.age = 25; 
+
+// ✅ 正确：使用 Vue.set
+Vue.set(vm.user, 'age', 25);
+```
+
+```javascript
+// ❌ 错误：直接通过索引修改数组不会触发更新
+vm.items[0] = { id: 100 };
+
+// ✅ 正确
+Vue.set(vm.items, 0, { id: 100 });
+```
 
 
 
-#### 2.13.1 Vue.observable
+#### 2.13.2 Vue.observable
 
-vue2.6 推出的接口，在非父子组件通信时，可以使用 eventBus 或者使用状态管理工具例如 vuex 或 pinia，但是功能不复杂的时候我们可以考虑使用 vue.observable
+Vue 2.6 新增接口，**让一个普通对象变成响应式对象**，可以不存在于一个组件的 data 属性中，使得一整个应用都共享同一个对象。通常用于避免使用大型状态管理工具的场景。
+
+示例：
+
+1. 创建跨组件的响应式状态
+
+```javascript
+// store.js
+export const state = Vue.observable({
+  count: 0,
+  todos: []
+});
+
+// 组件中使用
+import { state } from './store';
+export default {
+  computed: {
+    count() { return state.count; }
+  },
+  methods: {
+    increment() { state.count++; } // 触发视图更新
+  }
+}
+```
+
+2. 替代 Event Bus 的简单状态共享
+
+```javascript
+// 创建响应式全局状态
+const globalState = Vue.observable({ theme: 'light' });
+
+// 所有组件可读写
+globalState.theme = 'dark'; // 自动触发依赖更新
+```
+
+> Vue 2 文档：[API — Vue.js](https://v2.cn.vuejs.org/v2/api/#实例方法-事件)
+>
+> Vue 3 迁移文档：[事件 API | Vue 3 迁移指南](https://v3-migration.vuejs.org/zh/breaking-changes/events-api.html#_2-x-syntax)
+>
+> Event Bus（事件总线） 是一种设计模式，适用于**非父子组件或跨层级组件**之间的通信。它本质上是一个中央事件系统，允许组件通过发布/订阅模式进行通信。
+>
+> 核心概念：
+>
+> - 发布者（Publisher）：触发事件的组件
+> - 订阅者（Subscriber）：监听并响应事件的组件
+> - 事件中心（Event Bus）：管理事件发布和订阅的中央枢纽
+>
+> Vue 2 中，Vue 实例内部实现了这样的一个事件总线，可以使得在整个程序中任一处调用相关接口对总线中的数据进行操作：
+>
+> | 方法    | 描述     | 示例                                     |
+> | :------ | :------- | :--------------------------------------- |
+> | `$on`   | 监听事件 | `EventBus.$on('event-name', callback)`   |
+> | `$emit` | 触发事件 | `EventBus.$emit('event-name', data)`     |
+> | `$off`  | 取消监听 | `EventBus.$off('event-name', callback)`  |
+> | `$once` | 监听一次 | `EventBus.$once('event-name', callback)` |
+>
+> 由于全局总线不利于维护项目，Vue 3 中移除了对事件总线及相关方法的实现，但保留了 `emit` 用于父子组件之间的通信，也因而本文不再对其进行分析。
+>
+> 如仍有需要，可以使用外部的、实现了事件触发器接口的库，例如 mitt 或 tiny-emitter
 
 
 
-#### 2.13.2 Vue.use
+
+#### 2.13.3 Vue.use
 
 仅 Vue2；Vue3 需要使用 `app.use()`，app 是一个 vue 应用实例；
 
-1. use 概念
-   安装Vue.js插件。如果插件是一个对象，必须提供install方法。如果插件是一个函数，它会被作为install
-   方法。install方法调用时，会将Vue作为参数传入，这样插件中就不在需要依赖Vue了。
-2. 插件的功能
-    - 添加全局指令、全局过滤器、全局组件。
-    - 通过全局混入来添加一些组件选项。
-    - 添加vue实例方法，通过把它们添加到vue.prototype上实现。
-3. 实现原理
+##### （1）基本概念
+
+安装 Vue.js 插件。如果插件是一个对象，必须提供 install 方法。如果插件是一个函数，它会被作为 install 方法。install 方法被调用时，会将 Vue 作为参数传入，这样插件中就不再需要导入 Vue 或自行创建一个 Vue 实例了。
+
+##### （2）应用场景
+
+- 添加全局指令、全局过滤器、全局组件。
+- 通过全局混入来添加一些组件选项。
+- 添加 Vue 实例方法，通过把它们添加到 Vue.prototype 上实现。
+
+##### （3）实现原理（待补充）
 
 
 
-#### 2.13.3 Vue.extend
+#### 2.13.4 Vue.extend
 
 仅 Vue2；Vue3 需要从 Vue 中导入使用 `defineComponent()`；
 
-1. 概念
+##### （1）基本概念
 
-使用基础 Vue 构造器，创建一个"子类"。参数是一个包含组件选项的对象。
+使用基础 Vue 构造器，创建一个继承自 Vue 基类的“子类”。参数是一个包含组件选项的对象。它允许你基于 Vue 构造器创建一个可复用的组件定义，而不是直接创建一个组件实例。
 
-data选项是特例，需要注意在 vue.extend() 中它必须是函数
+- **组件构造器**：返回的是一个构造函数，不是组件实例
+- **继承机制**：创建的构造器继承自 Vue 基类
+- **可复用性**：可以多次实例化创建多个组件实例
 
-例如：
+##### （2）代码示例
+
+1. 基本语法
 
 ```javascript
-var Profile = Vue.extend({
-	template: "<p>{{firstName}} {{lastName}} aka {{alias}}</p>",
-	data: function ({
-        return{
-            firstName: "walter",
-            lastName: "white",
-            alias: "Heisenberg",
-		}
-	);
-});
-//创建 Profile 实例，并挂载到一个元素上。
-new Profile().$mount("#mount-point");
-new Vue().$mount();
+// 创建组件构造器
+const MyComponent = Vue.extend({
+  // 组件选项
+  template: '<div>{{ message }}</div>',
+  data() {
+    return {
+      message: 'Hello from Vue.extend!'
+    }
+  }
+})
+
+// 实例化组件
+const instance = new MyComponent()
+
+// 挂载到DOM
+instance.$mount('#app')
 ```
 
-2. 分析
+2. 创建可复用的组件构造器
+
+```javascript
+const Button = Vue.extend({
+  template: '<button :class="type"><slot></slot></button>',
+  props: ['type']
+})
+
+// 创建多个实例
+const primaryBtn = new Button({ propsData: { type: 'primary' } })
+const dangerBtn = new Button({ propsData: { type: 'danger' } })
+```
+
+3. 继承与扩展
+
+```javascript
+// 基础组件
+const BaseComponent = Vue.extend({
+  data() {
+    return { baseData: 'Base data' }
+  }
+})
+
+// 扩展基础组件
+const ExtendedComponent = BaseComponent.extend({
+  data() {
+    return { extendedData: 'Extended data' }
+  }
+})
+```
+
+4. 动态组件创建
+
+```javascript
+// 动态创建弹窗组件
+function createModal(content) {
+  const Modal = Vue.extend({
+    template: `
+      <div class="modal">
+        <div class="modal-content">{{ content }}</div>
+        <button @click="close">Close</button>
+      </div>
+    `,
+    props: ['content'],
+    methods: {
+      close() {
+        this.$destroy()
+        this.$el.remove()
+      }
+    }
+  })
+  
+  const instance = new Modal({ propsData: { content } })
+  instance.$mount()
+  document.body.appendChild(instance.$el)
+}
+```
+
+
+
+
+
+##### （3）用法分析
 
 - **所有的组件创建时**都会调用 Vue.extend 方法进行创建
 - 有了此方法我们可以用于手动挂载组件。
@@ -795,7 +1000,7 @@ new Vue().$mount();
 
 
 
-#### 2.13.4 Vue.filter
+#### 2.13.5 Vue.filter
 
 仅 Vue2；Vue3废除
 
@@ -818,9 +1023,9 @@ Vue.filter('filterB', function (value) {
 
 
 
-#### 2.13.5 Vue.mixin
+#### 2.13.6 Vue.mixin
 
-1. Vue.mixin 概念
+##### （1）基本概念
 
 `Vue.mixin` 可以用来扩展组件，将公共逻辑进行抽离（写好一个公用组件A，含 template data component 等，使用 `Vue.mixin` 后可以选择和全局所有组件，或是和某一组件合并/混入到一起）。例如：
 
@@ -871,7 +1076,7 @@ app.mixin({ /* 应用级选项 */ })
 
 
 
-2. 工作原理
+##### （2）工作原理
 
 选项合并：当组件和 Mixin 有同名选项时，Vue 按以下规则合并：
 
@@ -882,7 +1087,9 @@ app.mixin({ /* 应用级选项 */ })
 | **`methods`**    | 合并为对象，组件方法优先（冲突时覆盖混入方法）         |
 | **`computed`**   | 合并为对象，组件方法优先（冲突时覆盖混入方法）         |
 
-**示例**：
+
+
+##### （3）示例代码
 
 ```javascript
 const mixin = {
@@ -912,7 +1119,7 @@ Vue.config.optionMergeStrategies.myOption = (parentVal, childVal) => {
 
 
 
-3. 存在问题
+##### （4）缺点及最佳用法
 
 - 命名冲突：混入和组件同名属性/方法会被覆盖，难以调试。
 
@@ -935,9 +1142,7 @@ methods: { fetchData() { return axios.get(`/user/${this.userId}`) } }
 
 - 调试困难：混入的逻辑分散在多个文件中，错误堆栈不易追踪。
 
-
-
-4. Vue3 最佳实践
+Vue3 最佳实践
 
 则若需要提取公共项目，最好使用 Vue3 的 Composition API 和导入。Composition API 允许将**数据、方法、生命周期打包**为一个自包含的单元。例如：
 
@@ -1378,25 +1583,25 @@ Vue3.2 之后，增加了 v-memo 指令，通过依赖列表的方式控制页�
 
 ```vue
 <div v-click-outside="hide">
-    <input type="text" @focus="show"
-    <div v-if="isShow">显示面板</div>
+  <input type="text" @focus="show"
+  <div v-if="isShow">显示面板</div>
 </div>
 ```
 
 ```js
 Vue.directive(clickoutside, {
-	bind(el, bindings, vnode){
-		el.handler = function (e) {
-			if (!el.contains(e.target)) {
-				let method = bindings.expression;
-				vnode. context[method] ();
-            }
-        };
-		document.addEventListener("click", el.handler);
-    },
-	unbind(e1){
-		document.removeEventListener("click", el.handler);
-    },
+  bind(el, bindings, vnode){
+    el.handler = function (e) {
+      if (!el.contains(e.target)) {
+        let method = bindings.expression;
+        vnode. context[method] ();
+      }
+    };
+    document.addEventListener("click", el.handler);
+  },
+  unbind(e1){
+    document.removeEventListener("click", el.handler);
+  },
 });
 ```
 
@@ -1426,14 +1631,14 @@ Vue.directive(clickoutside, {
 ```vue
 // 方式一：Options 写法
 <script>
-export default {
-  functional: true,
-  props: ['message'],
-  render(h, context) {
-    // context 包含 props, children, slots, scopedSlots, data 等
-    return h('div', context.props.message)
+  export default {
+    functional: true,
+    props: ['message'],
+    render(h, context) {
+      // context 包含 props, children, slots, scopedSlots, data 等
+      return h('div', context.props.message)
+    }
   }
-}
 </script>
 
 // 方式二：单文件组件（SFC）
@@ -1442,9 +1647,9 @@ export default {
 </template>
 
 <script>
-export default {
-  props: ['message']
-}
+  export default {
+    props: ['message']
+  }
 </script>
 ```
 
@@ -1456,7 +1661,7 @@ Vue 3 中没有 functional 属性，推荐使用纯函数形式（返回 VNode�
 import { h } from 'vue'
 
 const SortableList = (props, { emit }) => {
-  return h('ul', 
+  return h('ul',
     props.items
       .sort((a, b) => props.sortOrder === 'asc' ? a - b : b - a)
       .map(item => h('li', { key: item }, item))
@@ -1466,10 +1671,10 @@ const SortableList = (props, { emit }) => {
 
 ```vue
 // 使用
-<SortableList 
-  :items="[3, 1, 4]" 
-  :sortOrder="asc" 
-  @change="handleSortChange"
+<SortableList
+    :items="[3, 1, 4]"
+    :sortOrder="asc"
+    @change="handleSortChange"
 />
 ```
 
@@ -1484,7 +1689,7 @@ const SortableList = (props, { emit }) => {
 ```javascript
 // 当提供了 name 属性时，才会将自己纳入可用的 components 列表里面
 if (name){
-	Sub.options.components[name] = Sub
+  Sub.options.components[name] = Sub
 }
 ```
 
@@ -1513,12 +1718,12 @@ const count = ref(0)
 
 async function increment() {
   count.value++ // 修改响应式数据
-  
+
   // 此时 DOM 还未更新
   console.log(document.getElementById('counter').textContent) // 旧值
 
   await nextTick()
-  
+
   // 现在 DOM 已更新
   console.log(document.getElementById('counter').textContent) // 新值
 }
@@ -1547,7 +1752,7 @@ keep-alive 是vue 中的内置组件，能在组件切换过程会缓存组件�
 
 ```vue
 <keep-alive :include="whiteList" :exclude="blackList" :max="count">
-    <component :is="component"></component>
+  <component :is="component"></component>
 </keep-alive>
 ```
 
@@ -1556,18 +1761,18 @@ keep-alive 是vue 中的内置组件，能在组件切换过程会缓存组件�
 ```vue
 <!-- 场景一，统一名单决定是否需要 keep-alive -->
 <keep-alive :include="需要缓存的组件的 name 列表" :exclude="不缓存的组件的 name 列表" :max="LRU 缓存列表最大值">
-    <router-view></router-view>
+  <router-view></router-view>
 </keep-alive>
 
 <!-- 场景二，router 的 meta 属性决定是否需要 keep-alive -->
 <div id="app">
-    <keep-alive>
-        <!-- 需要缓存的视图组件 -->
-        <router-view v-if="$route.meta.keepAlive"></router-view>
-    </keep-alive>
-    
-    <!--不需要缓存的视图组件-->
-    <router-view v-if="!Sroute.meta. keepAlive"></router-view>
+  <keep-alive>
+    <!-- 需要缓存的视图组件 -->
+    <router-view v-if="$route.meta.keepAlive"></router-view>
+  </keep-alive>
+
+  <!--不需要缓存的视图组件-->
+  <router-view v-if="!Sroute.meta. keepAlive"></router-view>
 </div>
 ```
 
