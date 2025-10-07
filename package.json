@@ -13,7 +13,6 @@
   ],
   "repository": "https://github.com/ZK-Jackie/zk-jackie.github.io",
   "scripts": {
-    "postinstall": "pnpm exec playwright install",
     "dev": "astro dev --mode development",
     "build:dev": "astro build --mode development",
     "build:prod": "astro build --mode production && pnpm run compress",
