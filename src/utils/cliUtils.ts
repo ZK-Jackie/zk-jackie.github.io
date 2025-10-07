@@ -17,6 +17,10 @@ program
 program
   .command('build')
   .description('Build the project')
+  .addOption(
+    new Option(`--outDir <directory>`, 'Specify the output directory for the build.')
+      .default('dist')
+  )
   .action(() => {
     console.log('Building the project...');
   });

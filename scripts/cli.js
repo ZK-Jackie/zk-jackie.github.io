@@ -15,6 +15,12 @@ program
   );
 
 program
+  .addOption(
+    new Option('-d, --dir <dir>', 'Directory to process')
+      .default('dist')
+  );
+
+program
   .parse(process.argv);
 
-export const { target } = program.opts();
+export const { target, dir } = program.opts();

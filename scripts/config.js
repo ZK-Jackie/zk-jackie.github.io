@@ -1,4 +1,4 @@
-import { target } from "./cli.js";
+import { dir, target } from "./cli.js";
 
 export const config = {
   // Global configuration
@@ -19,7 +19,7 @@ export const config = {
   // JavaScript compression configuration
   javascript: {
     enabled: true,
-    path: 'dist',
+    // path: 'dist',
     extensions: ['.js', '.mjs'],
     // File/folder patterns to ignore
     ignorePatterns: [
@@ -46,7 +46,7 @@ export const config = {
   // HTML compression configuration
   html: {
     enabled: true,
-    path: 'dist',
+    // path: 'dist',
     extensions: ['.html'],
     ignorePatterns: [
       '**/_astro/**',
@@ -72,7 +72,7 @@ export const config = {
   // CSS compression configuration
   css: {
     enabled: false, // CSS is usually already optimized by Astro
-    path: 'dist',
+    // path: 'dist',
     extensions: ['.css'],
     ignorePatterns: [
       '**/_astro/**',
@@ -84,7 +84,7 @@ export const config = {
   // File cleanup configuration
   cleanup: {
     enabled: true,
-    path: 'dist',
+    // path: 'dist',
     // Concurrency control (number of files to delete simultaneously)
     concurrency: 10,
     // Whether to remove empty directories
@@ -102,7 +102,7 @@ export const config = {
   // Gzip compression configuration
   gzip: {
     enabled: true,
-    path: 'dist',
+    // path: 'dist',
     algorithm: 'gzip', // 'gzip' or 'brotli'
     level: 9, // Compression level 1-9
     extensions: ['.js', '.css', '.html', '.xml', '.json', '.svg'],
@@ -121,7 +121,7 @@ export const config = {
   // Brotli compression configuration (optional)
   brotli: {
     enabled: false,
-    path: 'dist',
+    // path: 'dist',
     algorithm: 'brotli',
     level: 11,
     extensions: ['.js', '.css', '.html', '.xml', '.json', '.svg'],
@@ -147,17 +147,18 @@ export const config = {
 // Environment-specific configuration overrides
 function applyEnvironmentOverrides(baseConfig) {
   const buildTarget = target
+  const targetPath = dir
   let finalConfig;
 
   if (buildTarget === 'cleanup') {
     finalConfig = {
       global: {
         ...baseConfig.global,
+        path: targetPath
         // verbose: false
       },
       cleanup: {
         enabled: true,
-        path: process.cwd(),
         concurrency: 20, // Use higher concurrency in cleanup mode
         removeEmptyDirs: true,
         // File patterns to delete
@@ -170,7 +171,11 @@ function applyEnvironmentOverrides(baseConfig) {
   } else if (buildTarget === 'compression') {
     // Development environment optimization
     finalConfig = {
-      ...baseConfig
+      ...baseConfig,
+      global: {
+        ...baseConfig.global,
+        distPath: targetPath
+      }
     }
   }
 

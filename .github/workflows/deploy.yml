@@ -36,38 +36,32 @@ jobs:
       - name: Install dependencies
         run: pnpm install --loglevel=warn --prod
 
-      - name: Build site for GitHub Pages
-        run: pnpm run build:gh
-
-      # 上传文件夹时的 path，末尾有无 “/” 效果一致；actions/upload-pages-artifact 在普通的 upload 基础上多了一步打包
-      - name: Upload Github Pages Artifact
-        uses: actions/upload-pages-artifact@v4
-        with:
-          path: "./dist/"
-
-#      - name: Build site for Cloudflare Pages
-#        run: pnpm run build:cf
-#
-#      - name: Upload Cloudflare Pages Artifact
-#        uses: actions/upload-artifact@v4
-#        with:
-#          name: cf-pages
-#          path: './dist'
-
       - name: Create env file for Production
         run: |
           cat << 'EOF' > .env.production
           ${{ secrets.ENV_PRODUCTION }}
           EOF
 
-      - name: Build site for Production
-        run: pnpm run build:prod
+      - name: Build stite for GitHub Pages, Cloudflare Pages and Production parallelly
+        run: pnpm run build:gh & pnpm run build:cf & pnpm run build:prod && wait
+
+      # 上传文件夹时的 path，末尾有无 “/” 效果一致；actions/upload-pages-artifact 在普通的 upload 基础上多了一步打包
+      - name: Upload Github Pages Artifact
+        uses: actions/upload-pages-artifact@v4
+        with:
+          path: "./dist-gh"
+
+      - name: Upload Cloudflare Pages Artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: cf-pages
+          path: './dist-cf'
 
       - name: Upload Production Artifact
         uses: actions/upload-artifact@v4
         with:
           name: prod-pages
-          path: './dist'
+          path: './dist-prod'
 
   deploy-gh:
     name: Deploy to GitHub Pages
@@ -83,33 +77,33 @@ jobs:
         id: deployment
         uses: actions/deploy-pages@v4
 
-#  deploy-cf:
-#    name: Deploy to Cloudflare Pages
-#    needs: build
-#    runs-on: ubuntu-latest
-#    steps:
-#      - name: Download artifact
-#        uses: actions/download-artifact@v5
-#        with:
-#          name: cf-pages
-#          path: 'dist'
-#
-#      - name: Deploy
-#        uses: cloudflare/wrangler-action@v3
-#        env:
-#          PNPM_VERSION: 10.18.0
-#        with:
-#          apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
-#          accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
-#          command: pages deploy ./dist --project-name=zk-jackie-github-io
-#          gitHubToken: ${{ secrets.GITHUB_TOKEN }}
-#          vars: |
-#            PNPM_VERSION
-#
-#      - name: Remove artifact
-#        uses: geekyeggo/delete-artifact@v5
-#        with:
-#          name: cf-pages
+  deploy-cf:
+    name: Deploy to Cloudflare Pages
+    needs: build
+    runs-on: ubuntu-latest
+    steps:
+      - name: Download artifact
+        uses: actions/download-artifact@v5
+        with:
+          name: cf-pages
+          path: 'dist-cf'
+
+      - name: Deploy
+        uses: cloudflare/wrangler-action@v3
+        env:
+          PNPM_VERSION: 10.18.0
+        with:
+          apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          command: pages deploy ./dist --project-name=zk-jackie-github-io
+          gitHubToken: ${{ secrets.GITHUB_TOKEN }}
+          vars: |
+            PNPM_VERSION
+
+      - name: Remove artifact
+        uses: geekyeggo/delete-artifact@v5
+        with:
+          name: cf-pages
 
   deploy-production:
     name: Deploy to Production Server
@@ -135,7 +129,7 @@ jobs:
         uses: actions/download-artifact@v5
         with:
           name: prod-pages
-          path: "dist"
+          path: "dist-prod"
 
       # https://github.com/easingthemes/ssh-deploy
       - name: Deploy to Production Server
@@ -143,7 +137,7 @@ jobs:
         with:
           SSH_PRIVATE_KEY: ${{ secrets.PROD_PRIVATE_KEY }}
           ARGS: "-rlgoDzvc -i --delete"
-          SOURCE: "dist/"
+          SOURCE: "dist-prod/"
           REMOTE_HOST: ${{ secrets.PROD_HOST }}
           REMOTE_USER: ${{ secrets.PROD_USERNAME }}
           TARGET: ${{ vars.PROD_TARGET || '/var/www/html/' }}
