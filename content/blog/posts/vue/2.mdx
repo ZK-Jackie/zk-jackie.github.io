@@ -651,9 +651,9 @@ flowchart TD
 - reactive 用于处理**对象类型**的数据响应式。底层采用的是 new Proxy()，注意，proxy 只能代理对象，不能代理基本类型
 - ref 通常用于处理**单值**的响应式，ref 主要解决原始值的响应式问题。底层采用的是 reactive，转换源码如下：[ref 对象的构造]([ref.ts - vuejs/core - GitHub1s](https://github1s.com/vuejs/core/blob/main/packages/reactivity/src/ref.ts#L117-L121)) -> [ref 内部的 value 是一个 Proxy]([reactive.ts - vuejs/core - GitHub1s](https://github1s.com/vuejs/core/blob/main/packages/reactivity/src/reactive.ts#L421-L422))
 
-如果 ref(对象)，那么返回的对象的 value 是一个 Proxy；
+如果 `ref(对象)`，那么返回的对象的 value 是一个 Proxy；
 
-如果 reactive({"key1": "v1", "k2": ref(单值)})，调用返回值的k2时会自动拆包，不用返回值.k2.value（数组除外）
+如果 `reactive({"key1": "v1", "k2": ref(单值)})`，调用返回值的k2时会自动拆包，不用返回值.k2.value（数组除外）
 
 
 
@@ -667,12 +667,12 @@ flowchart TD
 
     - 用法
 
-      ```js
-      watcheffect(() => {
-          app.innerHTML = state.name;
-          // 数据变化后，会调用scheduler内部会再次触发effect.run（）重新运行getter
-      });
-      ```
+        ```js
+        watcheffect(() => {
+            app.innerHTML = state.name;
+            // 数据变化后，会调用scheduler内部会再次触发effect.run（）重新运行getter
+        });
+        ```
 
 - watch 侦测一个或多个响应式数据源并在数据源变化时调用一个回调函数。
 
@@ -680,12 +680,12 @@ flowchart TD
 
     - 用法
 
-      ```js
-      watch(
-          () => state.name,
-          (newval，o1dval)=>{}	//数据变化后，会调用scheduler，内部会调用cb
-      );
-      ```
+        ```js
+        watch(
+            () => state.name,
+            (newval, o1dval)=>{}	//数据变化后，会调用scheduler，内部会调用cb
+        );
+        ```
 
 
 
@@ -1381,7 +1381,7 @@ Vue3中修改名字和双向绑定多个数据（.sync在Vue3中已废除）
 
 
   ```vue
-<input @keyup.esc="closeModal" />
+  <input @keyup.esc="closeModal" />
   ```
 
 
@@ -1390,7 +1390,7 @@ Vue3中修改名字和双向绑定多个数据（.sync在Vue3中已废除）
 
 
   ```vue
-<input @keyup.page-down="nextPage" /> <!-- Vue 3 支持 -->
+  <input @keyup.page-down="nextPage" /> <!-- Vue 3 支持 -->
   ```
 
 **3. 表单输入修饰符（Form Modifiers）**
@@ -1492,7 +1492,7 @@ app.directive('color', {
 <p v-color.italic.bold="'red'">这段文字会变成红色、加粗、斜体</p>
 ```
 
-​
+
 
 #### 2.13.9 v-show 和 v-if
 
