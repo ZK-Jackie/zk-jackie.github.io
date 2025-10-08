@@ -43,7 +43,7 @@ jobs:
           EOF
 
       - name: Build stite for GitHub Pages, Cloudflare Pages and Production parallelly
-        run: pnpm run build:gh & pnpm run build:cf & pnpm run build:prod && wait
+        run: pnpm run build:gh && pnpm run build:cf && pnpm run build:prod
 
       # 上传文件夹时的 path，末尾有无 “/” 效果一致；actions/upload-pages-artifact 在普通的 upload 基础上多了一步打包
       - name: Upload Github Pages Artifact
