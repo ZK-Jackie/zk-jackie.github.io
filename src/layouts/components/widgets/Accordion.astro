@@ -1,4 +1,5 @@
 ---
+import { createHash } from 'crypto';
 interface Props {
   label: string;
   group: string;
@@ -7,7 +8,10 @@ interface Props {
 
 const { label, group, expanded = "false" } = Astro.props;
 const isExpanded = expanded === "true";
-const accordionId = `accordion-${label.replace(/\s+/g, '-').toLowerCase()}-${Math.random().toString(36).substring(2, 9)}`;
+// const accordionId = `accordion-${label.replace(/\s+/g, '-').toLowerCase()}-${Math.random().toString(36).substring(2, 9)}`;
+// 使用摘要算法生成更短的ID
+const hash = createHash('md5').update(label + group).digest('hex').substring(0, 8);
+const accordionId = `accordion-${hash}`;
 ---
 
 <div class="accordion-item mb-4 border border-gray-200 dark:border-gray-700 rounded-lg overflow-hidden">
