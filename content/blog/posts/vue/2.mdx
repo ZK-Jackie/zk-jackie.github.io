@@ -288,7 +288,7 @@ onMounted(() => {
     - `destroyed` → `unmounted`
 - 新增`renderTracked`和`renderTriggered`调试钩子
 
-详细见 [2.6.2](#2-6-2-Vue-的生命周期)
+详细见 [2.6.2](#262-Vue-的生命周期)
 
 
 
@@ -442,7 +442,7 @@ export default {
 }
 ```
 
-如果不需要记录父子组件之间的关联关系，可以令 `abstract: true`，则变为了一个函数式组件，详见 [2.8.2](#2-8-2-函数式组件)
+如果不需要记录父子组件之间的关联关系，可以令 `abstract: true`，则变为了一个函数式组件，详见 [2.8.2](#282-函数式组件)
 
 
 
@@ -854,17 +854,17 @@ Vue 3 中修改名字和双向绑定多个数据（.sync 在 Vue 3 中已废除�
 
 ##### （2）常见问题
 
-1. v-for 和 v-if 的优先级
+1. `v-for` 和 `v-if` 的优先级
 
-- 对于 vue 2
-- 
-v-for 优先级高于 v-if，v-for 确定了需要被重复生成的对象，v-if 确定了每个对象的显示与否，但是一般情况下不推荐这么做，一般是要放到外层的
+- 对于 Vue 2
 
-如果对遍历对象有局部的展示需求，可以用 computed 过滤后再用
+  `v-for` 优先级高于 `v-if`，`v-for` 确定了需要被重复生成的对象，v-if 确定了每个对象的显示与否，但是一般情况下不推荐这么做，一般是要放到外层的
 
-- 对于 vue 3
-- 
-v-if 优先级高于 v-for，v-if 会被提到当前语句外边，用\<template> 包裹当前语句，改进意见同上
+  如果对遍历对象有局部的展示需求，可以用 `computed` 过滤后再用
+
+- 对于 Vue 3
+
+  `v-if` 优先级高于 `v-for`，`v-if` 会被提到当前语句外边，用 `<template>` 包裹当前语句，改进方式同上
 
 
 
@@ -1740,7 +1740,7 @@ function createModal(content) {
 
 Vue 3 中，defineComponents 函数提供类似的功能，语法示例如下：
 
-```javascript
+```typescript
 // 选项语法
 function defineComponent(
   component: ComponentOptions
