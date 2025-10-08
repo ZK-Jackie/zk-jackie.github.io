@@ -95,7 +95,7 @@ jobs:
         with:
           apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
           accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
-          command: pages deploy ./dist --project-name=zk-jackie-github-io
+          command: pages deploy ./dist-cf --project-name=${{ secrets.CLOUDFLARE_PROJECT_NAME }}
           gitHubToken: ${{ secrets.GITHUB_TOKEN }}
           vars: |
             PNPM_VERSION
