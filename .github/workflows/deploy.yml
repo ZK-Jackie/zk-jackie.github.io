@@ -21,15 +21,19 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v6
         with:
-          fetch-depth: 0
+          fetch-depth: 1
 
       - name: Checkout blog posts repo
         uses: actions/checkout@v6
         with:
           repository: ZK-Jackie/blog
+          fetch-depth: 0
           ref: master
-          path: content         # 放到这个目录
+          path: content/blog         # 放到这个目录
           token: ${{ secrets.BLOG_PULL_PAT }}
+
+      - name: print file tree
+        run: tree
 
       - uses: pnpm/action-setup@v4
         name: Install pnpm
