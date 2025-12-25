@@ -43,4 +43,10 @@ blog/
 ## 注意事项
 
 - 确保在更新子模块时，使用 `git submodule update --remote --merge` 命令以获取最新的文章内容。
-- GitHub Actions 中自动化部署时，需要提前执行子模块更新命令 `git submodule update --init --recursive`，拉取到所有文章后再进行后续的构建和部署操作。
+- GitHub Actions 中自动化部署时，需要编辑好 actions/checkout 的参数，添加上下面两项：
+```yaml
+  with:
+    ...
+    submodules: recursive
+    token: ${{ secrets.BLOG_PULL_PAT }}
+```
