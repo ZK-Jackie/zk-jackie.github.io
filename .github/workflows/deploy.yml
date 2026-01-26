@@ -32,9 +32,6 @@ jobs:
           path: content/blog         # 放到这个目录
           token: ${{ secrets.BLOG_PULL_PAT }}
 
-      - name: print file tree
-        run: tree
-
       - uses: pnpm/action-setup@v4
         name: Install pnpm
         with:
