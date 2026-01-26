@@ -4,9 +4,9 @@
 
 <div align="center">
 
-![Astro](https://img.shields.io/badge/Astro-5.13.10-FF5D01?style=flat-square&logo=astro&logoColor=white)
-![TypeScript](https://img.shields.io/badge/TypeScript-5.8.3-3178C6?style=flat-square&logo=typescript&logoColor=white)
-![TailwindCSS](https://img.shields.io/badge/TailwindCSS-4.1.7-06B6D4?style=flat-square&logo=tailwindcss&logoColor=white)
+![Astro](https://img.shields.io/badge/Astro-5.16.13-FF5D01?style=flat-square&logo=astro&logoColor=white)
+![TypeScript](https://img.shields.io/badge/TypeScript-5.9.3-3178C6?style=flat-square&logo=typescript&logoColor=white)
+![TailwindCSS](https://img.shields.io/badge/TailwindCSS-4.1.13-06B6D4?style=flat-square&logo=tailwindcss&logoColor=white)
 ![License](https://img.shields.io/badge/License-MIT-green?style=flat-square)
 
 **基于 Astro 的个人博客前端项目**
